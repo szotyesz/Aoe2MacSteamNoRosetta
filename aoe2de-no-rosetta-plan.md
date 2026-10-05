@@ -1,368 +1,111 @@
-# AoE2DE on Apple Silicon Without Rosetta
+# AoE2DE on Apple Silicon Without Rosetta — Local POC
 
-Updated: 2026-10-02. This is an implementation plan, not a record of completed runtime milestones.
+Updated: 2026-10-05. This plan describes work still to implement unless explicitly marked verified.
 
-## Goal
+## Goal and working environment
 
-Run the **Windows Steam version of Age of Empires II: Definitive Edition** on Apple Silicon macOS with:
+Demonstrate the Windows Steam build of Age of Empires II: Definitive Edition on this Apple Silicon Mac, without Rosetta, using native ARM64 Wine, FEX CPU translation, and DXMT Metal rendering. The final POC target is playable gameplay and a completed multiplayer match with Windows players on matching game versions.
 
-- no Rosetta 2
-- Windows multiplayer compatibility
-- native-feeling performance
-- only free/open-source compatibility components
-- eventual packaging as a self-contained macOS `.app`
+Work proceeds on the user's temporary macOS installation with SIP and AMFI disabled. Entitlement access was attempted on another OS installation and did not work; the user is querying Apple in parallel. Apple's response is not a prerequisite for this local experiment. This POC makes no claim about operation with security enforcement enabled or Apple account authorization.
 
-## Target Architecture
+## Architecture
 
 ```text
-AoE2DE / Steam (x86-64 / eventual i386 Windows)
-            |
-            v
-      Wine ARM64EC / WoW64
-            |
-            +-- x86/x86-64 CPU code --> FEX --> ARM64
-            |
-            +-- Direct3D 11 --> DXMT --> Metal
-                                      |
-                                      v
-                                  Apple GPU
+Windows Steam / AoE2DE (x86-64, i386 helpers where required)
+    -> native ARM64 Wine / ARM64EC / WoW64
+        -> FEX: x86/x86-64 CPU code to ARM64
+        -> DXMT: D3D11 to Metal to Apple GPU
 ```
 
-## Core Components
+Use free/open-source compatibility components. Keep host executables native ARM64 and translate Windows code only. The main engineering risk is Darwin FEX integration with Wine, including mixed Steam helper processes and ARM64EC/native ABI boundaries.
 
-| Component | Role |
-|---|---|
-| Wine ARM64 / ARM64EC / WoW64 | Windows API and ABI compatibility |
-| FEX | x86/x86-64 -> ARM64 CPU translation |
-| DXMT | Direct3D 11 -> Metal translation |
-| Steam for Windows | Required launcher/account/multiplayer environment |
-| macOS 26.5+ | Provides required cross-architecture process features |
+## P0 — Platform capability probe
 
-## Main Risk
+Run `scripts/test-platform.sh` before porting. It compiles a native ARM64 test using the selected SDK, applies a local ad-hoc signature containing `com.apple.developer.cross-architecture-support-unmanaged`, and launches isolated children with `posix_spawnattr_set_4k_page_size_np()`.
 
-The difficult part is **not AoE2DE or D3D11**.
+Required checks:
 
-The main engineering risk is:
+- 4 KiB process pages: both `sysconf` and Mach report 4096; individual 4 KiB page protection succeeds.
+- Address layout: link with `-Wl,-x86_64_layout_emulation`, reserve a 4 GiB PAGEZERO, remap and access memory at Windows USER_SHARED_DATA address `0x7ffe0000`.
+- Custom x18 ABI: enter custom mode, write/read x18 in assembly, exit before returning to macOS calls. Mask signals around this section.
+- TSO: enable and disable `thread_set_x86_64_compat()` on the main thread and explicitly on a fresh pthread; do not assume inheritance.
 
-> reliable open-source **FEX <-> ARM64EC Wine integration on macOS**, especially across Steam's mixed helper processes.
+**Verified locally on 2026-10-05:** all checks pass on macOS 26.6.2 (25G83), SDK 27.0, SIP disabled, boot argument `amfi_get_out_of_my_way=0x1`. The probe is targeted at 26.5 but has not been run on 26.5 itself. See `tests/platform/README.md` for coverage and limits.
 
-Polished packaging should come only after this works reliably. A minimal loader app bundle and valid provisioning are early runtime requirements.
+This is a runtime gate, not an entitlement-approval gate. If a capability fails, preserve its error/exit/signal and investigate the current kernel, SDK, linker, signature, and process layout.
 
-## Selected Signing Strategy
+## P1 — Toolchains and source audit
 
-Use a **free Apple developer account with SIP and AMFI enabled**. Validate entitlement access before investing heavily in the Wine/FEX port.
+- Record the selected developer directory, compiler, linker, SDK, and native build-tool architectures. Command Line Tools are sufficient for the current platform probe; determine additional requirements from actual builds.
+- Select an ARM64-hosted LLVM/MinGW toolchain with ARM64EC PE support; compile native ARM64 and ARM64EC Windows probes.
+- Audit Wine's current ARM64 macOS changes and MR11638. Wine 11.18 is only a proposed baseline until its tag and required fixes are verified.
+- Audit FEX upstream and the experimental Darwin fork, plus DXMT's ARM64EC and native Metal components.
+- Pin exact revisions in a source manifest. Classify each necessary change as upstream, a focused local patch, superseded, or a temporary workaround.
 
-Two related restricted entitlements exist:
+**Status: pending.** Source revisions, toolchain choices, and the patch matrix have not been verified. Produce exact source pins, a native toolchain report, and concrete Darwin/ABI porting gaps before implementing Wine changes.
 
-- `com.apple.developer.cross-architecture-support`: reported as available to paid developer accounts.
-- `com.apple.developer.cross-architecture-support-unmanaged`: reported as available to free developer accounts, but account access and the workflow still need validation.
+## M0 — Native ARM64 Wine
 
-Adding either entitlement to a plist and ad-hoc signing is not sufficient under normal enforcement. The signature must match authorization from a provisioning profile.
+Adopt or implement address-layout handling, 4 KiB child-process creation, x18 ABI transitions at Windows/macOS boundaries, and explicit per-thread TSO initialization. Use local ad-hoc signing as demonstrated by P0. Add a minimal loader bundle only if the actual runtime requires one.
 
-If free-account provisioning fails, record the specific failure and investigate it. Do not automatically switch to disabled SIP or relaxed AMFI. Security-relaxed bring-up is not the selected implementation path.
+Start by verifying the configuration `--enable-archs=aarch64,arm64ec` against the pinned Wine source; it is not a promise that stock Wine builds or runs on this platform.
 
-## Initial Inspection
+**Status: pending.** No working Wine build or Windows console probe is present. The unvalidated build script and malformed patch drafts have been removed. Apple entitlement approval does not block this local milestone.
 
-Observed on 2026-10-02:
+**Acceptance:** an ARM64 Windows console probe runs; low mappings/page size are verified; Windows API calls, native callbacks, thread startup, and exception handling pass focused probes. All host processes are ARM64.
 
-- The repository contained a short README and this plan; no runtime implementation was present.
-- The development Mac runs macOS 26.6.2 on ARM64, with the 26.5 SDK and SIP enabled.
-- The active developer directory is `/Library/Developer/CommandLineTools`; `xcodebuild` cannot run with that selection. Check for a full Xcode installation during setup.
-- The August Wine announcement confirms the platform facilities and both entitlement names.
-- The September follow-up records unresolved free-account access questions at that time.
-- MR11638 was inaccessible behind a bot challenge. Its current status and exact changes remain to be inspected.
+## M1 — x86-64 execution through FEX
 
-These observations do not establish that the runtime works, that provisioning is available to this account, or that AMFI enforcement has been independently verified.
+Audit and adapt FEX memory/JIT management, exception handling, TLS, synchronization, and Darwin unixlib integration. Verify the emulation DLL naming/installation and Wine's `xtajit64.dll` interface against the source pins.
 
-## Phase 0 — Platform and Source Prerequisites
+**Acceptance:** a source-controlled x86-64 Windows console probe executes through FEX with correct output and status across repeated launches. Exercise threads, exceptions, memory-protection changes, and host callbacks. Verify the PE architecture and collect evidence that FEX executes it. Keep Steam and graphics outside this milestone.
 
-### 0.1 — Validate Free-Account Provisioning
+## M1.5 — Local runtime integration
 
-1. Create an App ID for the Wine loader.
-2. Attempt to enable the Cross-architecture Compatibility Framework capability.
-3. Register this Mac using its provisioning UDID.
-4. Obtain a development provisioning profile authorizing `com.apple.developer.cross-architecture-support-unmanaged`.
-5. Inspect the profile's entitlement authorization, application identifier, signing certificate, device eligibility, and expiration.
+Validate the complete M1 runtime from a clean Wine prefix, including child launches, fresh-thread compatibility setup, executable signatures, and repeatable build/run commands on this installation.
 
-**Gate:** obtain an authorized profile and matching signing identity. Treat inability to obtain them as a blocker to investigate before major porting work.
+**Acceptance:** repeatable x86-64 execution with documented host configuration and no translated Mach-O processes in the runtime tree. Apple account entitlement approval is not part of this gate.
 
-### 0.2 — Establish Reproducible Toolchains
+## M2 — Mixed architectures and Windows Steam
 
-- Check/select an appropriate full Xcode installation.
-- Verify SDK declarations and linker support for the cross-architecture APIs.
-- Select an ARM64-hosted LLVM/MinGW toolchain with ARM64EC PE support.
-- Compile small ARM64 and ARM64EC probes.
-- Record versions and ensure required build executables run natively.
+Determine the architectures needed by the selected Steam build. Add i386/WoW64 support where required and run a small 32-bit Windows probe first.
 
-### 0.3 — Audit and Pin Upstream Sources
+**Acceptance:** Steam installs, updates, logs in, persists the session, displays Library/Store, downloads, restarts helper processes, and launches a test application without Rosetta.
 
-Use Wine 11.18 as the proposed baseline, subject to confirming the tag and relevant fixes. Compare that baseline, current master, MR11638, and any subsequently published official macOS ARM64 work.
+## M3 — D3D11 and AoE2DE menu
 
-Classify each relevant change:
+Build DXMT's required PE/native components and verify ARM64EC/native ABI transitions. Run a small D3D11 device-creation/rendering test before installing and launching AoE2DE.
 
-| Classification | Action |
-|---|---|
-| Already upstream | Use the upstream implementation |
-| Still required | Carry a focused topic patch |
-| Superseded by the macOS APIs | Implement against the supported API |
-| Temporary workaround | Document and exclude from the intended runtime |
+**Acceptance:** confirmed Metal-backed rendering and a stable AoE2DE main menu.
 
-Perform equivalent source audits for FEX and DXMT, then record exact commits. Treat experimental Darwin forks as reference material until their relevant paths have been verified.
+## M4 — Gameplay and performance
 
-**Deliverables:** source manifest, Wine patch matrix, toolchain requirements, and identified FEX/DXMT porting gaps.
+Validate rendering, windowing/fullscreen, input, audio, save/load, frame pacing, and extended-session stability in a representative single-player scenario. Record Mac model, resolution, settings, scenario, and CPU/GPU timing before judging performance.
 
-## Milestones
+**Acceptance:** practical gameplay on this Mac, with measured performance and known limitations recorded.
 
-### M0 — Provisioned Native ARM64 Wine
+## M5 — Windows multiplayer
 
-Introduce a minimal loader bundle early:
+Validate Steam/AoE services, lobbies, game-version compatibility, simulation synchronization, and session stability.
+
+**Acceptance:** join Windows players and complete a real match; repeat successfully and record any desyncs or failures.
+
+## Repository and execution order
+
+Store test sources and build instructions in `tests/`, scripts in `scripts/`, focused patches in `patches/`, and source/milestone observations in `docs/`. Keep downloaded source trees, build outputs, prefixes, and machine-specific signing material outside tracked source. The platform probe builds in a temporary directory and removes its outputs.
 
 ```text
-WineLoader.app/
-└── Contents/
-    ├── Info.plist
-    ├── MacOS/
-    │   └── <actual Wine loader/launcher>
-    └── embedded.provisionprofile
+platform capability probe -> toolchain/source audit -> ARM64 Wine
+    -> FEX / x86-64 probe -> local runtime integration
+    -> mixed-architecture Steam -> D3D11 / game menu
+    -> gameplay measurements -> Windows multiplayer
 ```
 
-This is runtime infrastructure; the polished launcher remains M6. Determine the actual executable arrangement from the pinned Wine implementation.
+The POC is complete when this installation repeatedly launches Windows Steam and AoE2DE without Rosetta, renders through Metal, supports practical gameplay, and completes multiplayer sessions with Windows players.
 
-Implement or adopt:
+## References
 
-- **Address layout:** x86-compatible Mach-O layout and low-address mappings, using the supported linker facility such as `-Wl,-x86_64_layout_emulation`.
-- **4 KiB pages:** process creation using `posix_spawnattr_set_4k_page_size_np()` where Windows execution requires it.
-- **x18:** custom-x18 ABI transitions at the appropriate Windows/macOS boundaries, following the SDK contract.
-- **TSO:** per-thread `thread_set_x86_64_compat()` setup where translated x86 execution requires it; new threads do not inherit the state.
-- **Signing:** valid provisioning and signatures for each relevant executable.
-
-Start with the conceptual Wine architecture configuration:
-
-```text
---enable-archs=aarch64,arm64ec
-```
-
-This does not imply an unpatched upstream tree is a working macOS runtime.
-
-**Acceptance criteria:**
-
-- A native ARM64 Windows console probe runs through Wine.
-- The process reports the expected page size and establishes required mappings.
-- Windows calls, native callbacks, thread creation, and exception handling pass focused probes.
-- Required host processes are ARM64 and run with SIP/AMFI enforcement enabled.
-
-A loader printing its version is insufficient evidence that the runtime works.
-
-### M1 — x86-64 Execution
-
-Determine the smallest Darwin adaptation needed by FEX's Wine emulation backend. Audit memory/JIT handling, exceptions, thread state, TLS, synchronization, and native unixlib integration.
-
-Build and connect the x64 emulation component through Wine's supported interface. Verify exact DLL naming and installation rules against the pinned revisions, including the relationship between `libarm64ecfex.dll` and Wine's `xtajit64.dll` interface.
-
-Use a source-controlled, explicitly x86-64 console executable before Notepad.
-
-```text
-ARM64 Mach-O Wine
-  -> ARM64EC dispatch
-  -> FEX
-  -> hello-x64.exe
-```
-
-**Acceptance criteria:**
-
-- Correct output and exit status.
-- Evidence that the PE is x86-64 and FEX actually executes it.
-- Repeated successful launches.
-- Focused coverage for threads, exceptions, virtual-memory protection changes, and host callbacks.
-- No translated Mach-O processes in the runtime process tree.
-
-Keep Steam, i386, and graphics outside M1.
-
-### M1.5 — Complete Provisioned Runtime
-
-Because development starts with SIP enabled, this is an integration and reproducibility gate rather than a transition from bypass mode.
-
-Validate:
-
-- execution from the intended bundle;
-- profile authorization and signature consistency;
-- child-process launch paths;
-- fresh threads receiving required compatibility state;
-- operation from a clean Wine prefix;
-- reproducible setup using the documented free-account workflow.
-
-**Acceptance:** the complete M1 runtime works under normal SIP/AMFI enforcement, with a documented provisioning process.
-
-A development-profile build working on a registered Mac does not establish that another user can copy and run it. Record signing, device-registration, renewal, and distribution constraints here. They may affect the final “copy one app” goal.
-
-### M2 — Mixed Architecture Support and Steam
-
-Determine which architectures the selected Steam build requires. Add i386 support and FEX's WoW64 backend as needed, validating them with a small 32-bit probe before debugging Steam. Verify the expanded Wine architecture configuration against the pinned sources.
-
-Install and launch Windows Steam, then validate:
-
-- installation and updates
-- login and session persistence
-- Store/Library UI
-- downloads
-- Steam helper-process startup and restart
-- launching a test application
-
-**Success:** Steam operates reliably without Rosetta.
-
-### M3 — D3D11 Smoke Test and AoE2DE Launch
-
-Move minimal graphics integration ahead of the main-menu gate:
-
-1. Build the required DXMT PE and native components for this runtime.
-2. Validate the ARM64EC/native ABI boundaries.
-3. Run a small D3D11 device-creation and rendering test.
-4. Install the Windows Steam build of AoE2DE and reach the main menu.
-
-**Success:** verified Metal-backed D3D11 rendering and a stable game menu.
-
-### M4 — Gameplay and Performance
-
-Validate a representative single-player scenario using ARM64EC-compatible DXMT.
-
-Target path:
-
-```text
-AoE2DE D3D11 -> DXMT -> Metal -> Apple GPU
-```
-
-Validate:
-
-- rendering
-- fullscreen/windowing
-- input
-- audio
-- acceptable frame pacing
-- save/load
-- extended-session stability
-- CPU translation and graphics bottlenecks
-
-Define the performance target for the actual Mac, resolution, settings, and scenario before calling it “native-feeling.”
-
-**Success:** normal gameplay is practical.
-
-### M5 — Multiplayer
-
-Join a lobby with Windows players and complete a real match.
-
-Validate:
-
-- Steam networking
-- AoE services
-- matchmaking/lobbies
-- game-version compatibility
-- simulation synchronization and desyncs
-- stability over a full session
-- repeated sessions
-
-**Success:** repeatable completed matches with Windows players on matching game versions.
-
-### M6 — Packaging
-
-Only after M0-M5, including M1.5, succeed:
-
-- create a self-contained `.app`
-- bundle redistributable Wine, FEX, DXMT components, launch scripts, configuration, and license notices
-- keep the Wine prefix and writable data isolated
-- provide first-run Steam installation and game launch
-- implement the signing/provisioning distribution model established earlier
-- launch Steam directly into AoE2DE where practical
-- validate installation on another supported Mac
-- repeat the no-Rosetta audit
-
-## Proposed Repository Layout
-
-```text
-sources.lock
-patches/
-    wine/
-    fex/
-    dxmt/
-scripts/
-    check-host.sh
-    build-wine.sh
-    build-fex.sh
-    build-dxmt.sh
-    sign-loader.sh
-    verify-no-rosetta.sh
-bundle/
-    WineLoader.app/
-        Contents/Info.plist
-tests/
-    hello-arm64/
-    hello-x64/
-    hello-x86/
-    runtime/
-    d3d11-smoke/
-docs/
-    upstream-audit.md
-    provisioning.md
-    milestones.md
-```
-
-Keep source checkouts, build products, prefixes, and machine-specific provisioning material outside tracked source files. Store test source and build instructions rather than only prebuilt executables.
-
-## First Implementation Work Package
-
-End the first work package with:
-
-1. A verified free-account entitlement/provisioning result.
-2. A native toolchain capability report.
-3. Pinned upstream revisions and a classified Wine patch matrix.
-4. A minimal signed platform probe demonstrating the required macOS facilities.
-
-The earliest blockers to expose are entitlement availability and missing Darwin runtime support, before Steam or game debugging begins.
-
-## Development Rule
-
-Do **not** optimize packaging or UI before multiplayer works.
-
-Work in this order:
-
-```text
-free-account provisioning and toolchain/source audit
-    -> provisioned native Wine
-    -> FEX
-    -> trivial x86-64 executable
-    -> complete provisioning/reproducibility gate
-    -> mixed-architecture Steam
-    -> D3D11 smoke test / AoE2DE menu
-    -> gameplay and performance
-    -> Windows multiplayer
-    -> polished .app
-```
-
-## Definition of Done
-
-The project is complete when a user can:
-
-1. install/copy one macOS application bundle,
-2. launch it on Apple Silicon without Rosetta,
-3. sign in to Windows Steam,
-4. launch the Windows build of AoE2DE,
-5. play smoothly through Metal,
-6. join and complete multiplayer games with Windows friends.
-
-## Guiding Principle
-
-Prefer **native ARM64 host components** and translate only what must remain x86/x86-64.
-
-```text
-x86 Windows application code -> FEX
-Windows APIs                -> Wine
-D3D11                       -> DXMT
-GPU execution               -> native Metal / Apple GPU
-```
-
-## References and Verification Status
-
-- [Wine on ARM64 macOS, Brendan Shanks, August 7, 2026](https://list.winehq.org/hyperkitty/list/wine-devel%40list.winehq.org/message/CKG5CEN2BE5VRXZ7O7NX4YUSBH3247WH/) — inspected; describes x18, 4 KiB pages, address layout, TSO, and entitlement requirements.
-- [Free-account follow-up, September 9, 2026](https://list.winehq.org/hyperkitty/list/wine-devel%40list.winehq.org/message/EYMEAE4QQE2CR4OBITUENL3LB67ECDLU/) — inspected; capability access and documentation were still unresolved for the reporting user.
-- [Apple TN3125: Inside Code Signing: Provisioning Profiles](https://developer.apple.com/documentation/technotes/tn3125-inside-code-signing-provisioning-profiles) — authoritative provisioning reference; the text fetch returned only the page title, so inspect the full document during implementation.
-- [Wine MR11638](https://gitlab.winehq.org/wine/wine/-/merge_requests/11638) — pending inspection; access was blocked by a bot challenge. Do not treat the patch classification as completed.
-- [Experimental FEX macOS fork](https://github.com/Jpkovas/FEX_MacOs) — candidate reference for the source audit; suitability has not been verified.
+- [Wine ARM64 macOS announcement, August 7, 2026](https://list.winehq.org/hyperkitty/list/wine-devel%40list.winehq.org/message/CKG5CEN2BE5VRXZ7O7NX4YUSBH3247WH/) — describes the required facilities and entitlement names; inspected for this probe.
+- Installed SDK headers: `os/arch/arm64.h`, `spawn.h`, and `mach/mach_traps.h` — actual declarations and custom x18 contract used by the test. SDK 27.0 annotates x18 as 26.4 and 4 KiB spawning as 26.0; the announcement describes their usable combination in 26.5. Address-layout support is described as 26.4. Treat 26.5 as the full POC baseline rather than the introduction version of every API.
+- [Wine MR11638](https://gitlab.winehq.org/wine/wine/-/merge_requests/11638) — source audit pending.
+- [Experimental FEX Darwin fork](https://github.com/Jpkovas/FEX_MacOs) — reference candidate; suitability unverified.
