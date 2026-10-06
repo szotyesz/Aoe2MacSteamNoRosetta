@@ -1,0 +1,533 @@
+diff --git a/configure b/configure
+index ed9c961efc..269d71a505 100755
+--- a/configure
++++ b/configure
+@@ -11552,6 +11552,10 @@ fi
+     WINELOADER_LDFLAGS="-Wl,-segalign,0x1000,-pagezero_size,0x1000,-sectcreate,__TEXT,__info_plist,loader/wine_info.plist"
+ 
+     case $HOST_ARCH in
++      aarch64)
++        wine_use_preloader=no
++        WINELOADER_LDFLAGS="-Wl,-x86_64_layout_emulation,-pagezero_size,0x100000000,-sectcreate,__TEXT,__info_plist,loader/wine_info.plist"
++        ;;
+       i386) wine_use_preloader=yes ;;
+       x86_64)
+                 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether the compiler supports -Wl,-no_huge" >&5
+diff --git a/configure.ac b/configure.ac
+index f63669df19..bdc78717cb 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -941,6 +941,10 @@ case $host_os in
+     WINELOADER_LDFLAGS="-Wl,-segalign,0x1000,-pagezero_size,0x1000,-sectcreate,__TEXT,__info_plist,loader/wine_info.plist"
+ 
+     case $HOST_ARCH in
++      aarch64)
++        wine_use_preloader=no
++        WINELOADER_LDFLAGS="-Wl,-x86_64_layout_emulation,-pagezero_size,0x100000000,-sectcreate,__TEXT,__info_plist,loader/wine_info.plist"
++        ;;
+       i386) wine_use_preloader=yes ;;
+       x86_64)
+         dnl If the -no_huge linker option is present (added in Xcode 15.3), use zerofill sections instead of the preloader
+diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
+index b60e9f5287..8cc6929bb8 100644
+--- a/dlls/ntdll/unix/signal_arm64.c
++++ b/dlls/ntdll/unix/signal_arm64.c
+@@ -27,6 +27,7 @@
+ #include "config.h"
+ 
+ #include <assert.h>
++#include <errno.h>
+ #include <pthread.h>
+ #include <signal.h>
+ #include <stdlib.h>
+@@ -34,6 +35,11 @@
+ #include <stdio.h>
+ #include <sys/types.h>
+ #include <unistd.h>
++#ifdef __APPLE__
++# include <os/arch/arm64.h>
++# include <mach/mach_traps.h>
++# include <sys/sysctl.h>
++#endif
+ #ifdef HAVE_SYS_PARAM_H
+ # include <sys/param.h>
+ #endif
+@@ -810,6 +816,170 @@ NTSTATUS call_user_exception_dispatcher( EXCEPTION_RECORD *rec, CONTEXT *context
+ }
+ 
+ 
++#ifdef __APPLE__
++/* Runtime assertion runs after guest mode is disabled, never in custom mode. */
++static void __attribute__((used)) macos_check_native(void)
++{
++    static _Thread_local int reported;
++    int translated = 0;
++    size_t size = sizeof(translated);
++    if (os_custom_x18_abi_enabled() || sysconf(_SC_PAGESIZE) != 4096) abort();
++    if (!reported && getenv("AOE2_M0_DIAGNOSTICS"))
++    {
++        if (sysctlbyname("sysctl.proc_translated", &translated, &size, NULL, 0) && errno != ENOENT)
++            abort();
++        if (translated) abort();
++        fprintf(stderr, "M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=%d teb=%p\n",
++                getpid(), NtCurrentTeb());
++        reported = 1;
++    }
++}
++/* Only call these from assembly, outside C/native framework execution. */
++__ASM_GLOBAL_FUNC( macos_enter_guest,
++                   "sub sp, sp, #0x2b0\n\t"
++                   "stp x0, x1, [sp, #0x0]\n\t"
++                   "stp x2, x3, [sp, #0x10]\n\t"
++                   "stp x4, x5, [sp, #0x20]\n\t"
++                   "stp x6, x7, [sp, #0x30]\n\t"
++                   "stp x8, x9, [sp, #0x40]\n\t"
++                   "stp x10, x11, [sp, #0x50]\n\t"
++                   "stp x12, x13, [sp, #0x60]\n\t"
++                   "stp x14, x15, [sp, #0x70]\n\t"
++                   "stp x16, x17, [sp, #0x80]\n\t"
++                   "mrs x16, NZCV\n\t"
++                   "stp x30, x16, [sp, #0x90]\n\t"
++                   "stp q0, q1, [sp, #0xa0]\n\t"
++                   "stp q2, q3, [sp, #0xc0]\n\t"
++                   "stp q4, q5, [sp, #0xe0]\n\t"
++                   "stp q6, q7, [sp, #0x100]\n\t"
++                   "stp q8, q9, [sp, #0x120]\n\t"
++                   "stp q10, q11, [sp, #0x140]\n\t"
++                   "stp q12, q13, [sp, #0x160]\n\t"
++                   "stp q14, q15, [sp, #0x180]\n\t"
++                   "stp q16, q17, [sp, #0x1a0]\n\t"
++                   "stp q18, q19, [sp, #0x1c0]\n\t"
++                   "stp q20, q21, [sp, #0x1e0]\n\t"
++                   "stp q22, q23, [sp, #0x200]\n\t"
++                   "stp q24, q25, [sp, #0x220]\n\t"
++                   "stp q26, q27, [sp, #0x240]\n\t"
++                   "stp q28, q29, [sp, #0x260]\n\t"
++                   "stp q30, q31, [sp, #0x280]\n\t"
++                   "mrs x16, FPCR\n\t"
++                   "mrs x17, FPSR\n\t"
++                   "str x16, [sp, #0x2a0]\n\t"
++                   "str x17, [sp, #0x2a8]\n\t"
++                   "mov w0, #1\n\t"
++                   "bl _os_set_custom_x18_abi_enabled\n\t"
++                   "ldr x16, [sp, #0x2a0]\n\t"
++                   "ldr x17, [sp, #0x2a8]\n\t"
++                   "msr FPCR, x16\n\t"
++                   "msr FPSR, x17\n\t"
++                   "ldp q0, q1, [sp, #0xa0]\n\t"
++                   "ldp q2, q3, [sp, #0xc0]\n\t"
++                   "ldp q4, q5, [sp, #0xe0]\n\t"
++                   "ldp q6, q7, [sp, #0x100]\n\t"
++                   "ldp q8, q9, [sp, #0x120]\n\t"
++                   "ldp q10, q11, [sp, #0x140]\n\t"
++                   "ldp q12, q13, [sp, #0x160]\n\t"
++                   "ldp q14, q15, [sp, #0x180]\n\t"
++                   "ldp q16, q17, [sp, #0x1a0]\n\t"
++                   "ldp q18, q19, [sp, #0x1c0]\n\t"
++                   "ldp q20, q21, [sp, #0x1e0]\n\t"
++                   "ldp q22, q23, [sp, #0x200]\n\t"
++                   "ldp q24, q25, [sp, #0x220]\n\t"
++                   "ldp q26, q27, [sp, #0x240]\n\t"
++                   "ldp q28, q29, [sp, #0x260]\n\t"
++                   "ldp q30, q31, [sp, #0x280]\n\t"
++                   "ldp x30, x16, [sp, #0x90]\n\t"
++                   "msr NZCV, x16\n\t"
++                   "ldp x0, x1, [sp, #0x0]\n\t"
++                   "ldp x2, x3, [sp, #0x10]\n\t"
++                   "ldp x4, x5, [sp, #0x20]\n\t"
++                   "ldp x6, x7, [sp, #0x30]\n\t"
++                   "ldp x8, x9, [sp, #0x40]\n\t"
++                   "ldp x10, x11, [sp, #0x50]\n\t"
++                   "ldp x12, x13, [sp, #0x60]\n\t"
++                   "ldp x14, x15, [sp, #0x70]\n\t"
++                   "ldp x16, x17, [sp, #0x80]\n\t"
++                   "add sp, sp, #0x2b0\n\t"
++                   "ret" )
++__ASM_GLOBAL_FUNC( macos_leave_guest,
++                   "sub sp, sp, #0x2b0\n\t"
++                   "stp x0, x1, [sp, #0x0]\n\t"
++                   "stp x2, x3, [sp, #0x10]\n\t"
++                   "stp x4, x5, [sp, #0x20]\n\t"
++                   "stp x6, x7, [sp, #0x30]\n\t"
++                   "stp x8, x9, [sp, #0x40]\n\t"
++                   "stp x10, x11, [sp, #0x50]\n\t"
++                   "stp x12, x13, [sp, #0x60]\n\t"
++                   "stp x14, x15, [sp, #0x70]\n\t"
++                   "stp x16, x17, [sp, #0x80]\n\t"
++                   "mrs x16, NZCV\n\t"
++                   "stp x30, x16, [sp, #0x90]\n\t"
++                   "stp q0, q1, [sp, #0xa0]\n\t"
++                   "stp q2, q3, [sp, #0xc0]\n\t"
++                   "stp q4, q5, [sp, #0xe0]\n\t"
++                   "stp q6, q7, [sp, #0x100]\n\t"
++                   "stp q8, q9, [sp, #0x120]\n\t"
++                   "stp q10, q11, [sp, #0x140]\n\t"
++                   "stp q12, q13, [sp, #0x160]\n\t"
++                   "stp q14, q15, [sp, #0x180]\n\t"
++                   "stp q16, q17, [sp, #0x1a0]\n\t"
++                   "stp q18, q19, [sp, #0x1c0]\n\t"
++                   "stp q20, q21, [sp, #0x1e0]\n\t"
++                   "stp q22, q23, [sp, #0x200]\n\t"
++                   "stp q24, q25, [sp, #0x220]\n\t"
++                   "stp q26, q27, [sp, #0x240]\n\t"
++                   "stp q28, q29, [sp, #0x260]\n\t"
++                   "stp q30, q31, [sp, #0x280]\n\t"
++                   "mrs x16, FPCR\n\t"
++                   "mrs x17, FPSR\n\t"
++                   "str x16, [sp, #0x2a0]\n\t"
++                   "str x17, [sp, #0x2a8]\n\t"
++                   "mov w0, #0\n\t"
++                   "bl _os_set_custom_x18_abi_enabled\n\t"
++                   "bl _macos_check_native\n\t"
++                   "ldr x16, [sp, #0x2a0]\n\t"
++                   "ldr x17, [sp, #0x2a8]\n\t"
++                   "msr FPCR, x16\n\t"
++                   "msr FPSR, x17\n\t"
++                   "ldp q0, q1, [sp, #0xa0]\n\t"
++                   "ldp q2, q3, [sp, #0xc0]\n\t"
++                   "ldp q4, q5, [sp, #0xe0]\n\t"
++                   "ldp q6, q7, [sp, #0x100]\n\t"
++                   "ldp q8, q9, [sp, #0x120]\n\t"
++                   "ldp q10, q11, [sp, #0x140]\n\t"
++                   "ldp q12, q13, [sp, #0x160]\n\t"
++                   "ldp q14, q15, [sp, #0x180]\n\t"
++                   "ldp q16, q17, [sp, #0x1a0]\n\t"
++                   "ldp q18, q19, [sp, #0x1c0]\n\t"
++                   "ldp q20, q21, [sp, #0x1e0]\n\t"
++                   "ldp q22, q23, [sp, #0x200]\n\t"
++                   "ldp q24, q25, [sp, #0x220]\n\t"
++                   "ldp q26, q27, [sp, #0x240]\n\t"
++                   "ldp q28, q29, [sp, #0x260]\n\t"
++                   "ldp q30, q31, [sp, #0x280]\n\t"
++                   "ldp x30, x16, [sp, #0x90]\n\t"
++                   "msr NZCV, x16\n\t"
++                   "ldp x0, x1, [sp, #0x0]\n\t"
++                   "ldp x2, x3, [sp, #0x10]\n\t"
++                   "ldp x4, x5, [sp, #0x20]\n\t"
++                   "ldp x6, x7, [sp, #0x30]\n\t"
++                   "ldp x8, x9, [sp, #0x40]\n\t"
++                   "ldp x10, x11, [sp, #0x50]\n\t"
++                   "ldp x12, x13, [sp, #0x60]\n\t"
++                   "ldp x14, x15, [sp, #0x70]\n\t"
++                   "ldp x16, x17, [sp, #0x80]\n\t"
++                   "add sp, sp, #0x2b0\n\t"
++                   "ret" )
++
++# define MACOS_ENTER_GUEST "bl _macos_enter_guest\n\t"
++# define MACOS_LEAVE_GUEST "bl _macos_leave_guest\n\t"
++#else
++# define MACOS_ENTER_GUEST ""
++# define MACOS_LEAVE_GUEST ""
++#endif
++
+ /***********************************************************************
+  *           call_user_mode_callback
+  */
+@@ -842,6 +1012,7 @@ __ASM_GLOBAL_FUNC( call_user_mode_callback,
+                    "stp d12, d13, [x29, #0x80]\n\t"
+                    "stp d14, d15, [x29, #0x90]\n\t"
+                    "stp x1, x2, [x29, #0xa0]\n\t" /* ret_ptr, ret_len */
++                   MACOS_ENTER_GUEST
+                    "mov x18, x4\n\t"              /* teb */
+                    "mrs x1, fpcr\n\t"
+                    "mrs x2, fpsr\n\t"
+@@ -866,7 +1037,9 @@ __ASM_GLOBAL_FUNC( call_user_mode_callback,
+                    "ldr x1, [x20]\n\t"            /* args */
+                    "ldp w2, w0, [x20, #8]\n\t"    /* len, id */
+                    "str x0, [x29, #0xc0]\n\t"     /* id */
++                   MACOS_LEAVE_GUEST
+                    "bl " __ASM_NAME("trace_usercall") "\n\t"
++                   MACOS_ENTER_GUEST
+                    "mov x18, x19\n\t"             /* teb */
+                    "mov sp, x20\n\t"              /* user_sp */
+                    "br x21" )
+@@ -1113,7 +1286,17 @@ static void ill_handler( int signal, siginfo_t *siginfo, void *sigcontext )
+ static void bus_handler( int signal, siginfo_t *siginfo, void *sigcontext )
+ {
+     EXCEPTION_RECORD rec = { EXCEPTION_DATATYPE_MISALIGNMENT };
+-
++#ifdef __APPLE__
++    /* Darwin also uses SIGBUS for VM protection failures. Only DFSC 0x21
++     * describes an alignment fault; other data/instruction aborts need the
++     * ordinary Windows access-violation path, including write/execute bits. */
++    DWORD64 esr = get_fault_esr( sigcontext );
++    if ((esr & 0x3f) != 0x21)
++    {
++        segv_handler( signal, siginfo, sigcontext );
++        return;
++    }
++#endif
+     setup_exception( sigcontext, &rec );
+ }
+ 
+@@ -1376,6 +1559,40 @@ void signal_free_thread( TEB *teb )
+ }
+ 
+ 
++#ifdef __APPLE__
++static void macos_handle_signal( int sig, siginfo_t *info, void *ctx,
++                                 void (*handler)(int, siginfo_t *, void *) )
++{
++    ucontext_t *context = ctx;
++    if (os_custom_x18_abi_enabled()) os_set_custom_x18_abi_enabled( false );
++    handler( sig, info, ctx );
++    if (!is_inside_syscall( SP_sig(context) ) &&
++        REGn_sig(18, context) == (ULONG_PTR)NtCurrentTeb())
++        os_set_custom_x18_abi_enabled( true );
++}
++static void macos_int_handler( int sig, siginfo_t *info, void *ctx )
++{ macos_handle_signal( sig, info, ctx, int_handler ); }
++static void macos_fpe_handler( int sig, siginfo_t *info, void *ctx )
++{ macos_handle_signal( sig, info, ctx, fpe_handler ); }
++static void macos_abrt_handler( int sig, siginfo_t *info, void *ctx )
++{ macos_handle_signal( sig, info, ctx, abrt_handler ); }
++static void macos_quit_handler( int sig, siginfo_t *info, void *ctx )
++{ macos_handle_signal( sig, info, ctx, quit_handler ); }
++static void macos_usr1_handler( int sig, siginfo_t *info, void *ctx )
++{ macos_handle_signal( sig, info, ctx, usr1_handler ); }
++static void macos_usr2_handler( int sig, siginfo_t *info, void *ctx )
++{ macos_handle_signal( sig, info, ctx, usr2_handler ); }
++static void macos_trap_handler( int sig, siginfo_t *info, void *ctx )
++{ macos_handle_signal( sig, info, ctx, trap_handler ); }
++static void macos_segv_handler( int sig, siginfo_t *info, void *ctx )
++{ macos_handle_signal( sig, info, ctx, segv_handler ); }
++static void macos_ill_handler( int sig, siginfo_t *info, void *ctx )
++{ macos_handle_signal( sig, info, ctx, ill_handler ); }
++static void macos_bus_handler( int sig, siginfo_t *info, void *ctx )
++{ macos_handle_signal( sig, info, ctx, bus_handler ); }
++
++#endif
++
+ /**********************************************************************
+  *		signal_init_process
+  */
+@@ -1392,25 +1609,65 @@ void signal_init_process(void)
+     sig_act.sa_mask = server_block_set;
+     sig_act.sa_flags = SA_SIGINFO | SA_RESTART | SA_ONSTACK;
+ 
++#ifdef __APPLE__
++    sig_act.sa_sigaction = macos_int_handler;
++#else
+     sig_act.sa_sigaction = int_handler;
++#endif
+     if (sigaction( SIGINT, &sig_act, NULL ) == -1) goto error;
++#ifdef __APPLE__
++    sig_act.sa_sigaction = macos_fpe_handler;
++#else
+     sig_act.sa_sigaction = fpe_handler;
++#endif
+     if (sigaction( SIGFPE, &sig_act, NULL ) == -1) goto error;
++#ifdef __APPLE__
++    sig_act.sa_sigaction = macos_abrt_handler;
++#else
+     sig_act.sa_sigaction = abrt_handler;
++#endif
+     if (sigaction( SIGABRT, &sig_act, NULL ) == -1) goto error;
++#ifdef __APPLE__
++    sig_act.sa_sigaction = macos_quit_handler;
++#else
+     sig_act.sa_sigaction = quit_handler;
++#endif
+     if (sigaction( SIGQUIT, &sig_act, NULL ) == -1) goto error;
++#ifdef __APPLE__
++    sig_act.sa_sigaction = macos_usr1_handler;
++#else
+     sig_act.sa_sigaction = usr1_handler;
++#endif
+     if (sigaction( SIGUSR1, &sig_act, NULL ) == -1) goto error;
++#ifdef __APPLE__
++    sig_act.sa_sigaction = macos_usr2_handler;
++#else
+     sig_act.sa_sigaction = usr2_handler;
++#endif
+     if (sigaction( SIGUSR2, &sig_act, NULL ) == -1) goto error;
++#ifdef __APPLE__
++    sig_act.sa_sigaction = macos_trap_handler;
++#else
+     sig_act.sa_sigaction = trap_handler;
++#endif
+     if (sigaction( SIGTRAP, &sig_act, NULL ) == -1) goto error;
++#ifdef __APPLE__
++    sig_act.sa_sigaction = macos_segv_handler;
++#else
+     sig_act.sa_sigaction = segv_handler;
++#endif
+     if (sigaction( SIGSEGV, &sig_act, NULL ) == -1) goto error;
++#ifdef __APPLE__
++    sig_act.sa_sigaction = macos_ill_handler;
++#else
+     sig_act.sa_sigaction = ill_handler;
++#endif
+     if (sigaction( SIGILL, &sig_act, NULL ) == -1) goto error;
++#ifdef __APPLE__
++    sig_act.sa_sigaction = macos_bus_handler;
++#else
+     sig_act.sa_sigaction = bus_handler;
++#endif
+     if (sigaction( SIGBUS, &sig_act, NULL ) == -1) goto error;
+     return;
+ 
+@@ -1437,6 +1694,11 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, BOOL suspend,
+     CONTEXT *ctx, context = { CONTEXT_ALL };
+     I386_CONTEXT *i386_context;
+     ARM_CONTEXT *arm_context;
++#ifdef __APPLE__
++    if (thread_set_x86_64_compat(1) != KERN_SUCCESS) abort();
++    if (getenv("AOE2_M0_DIAGNOSTICS"))
++        fprintf(stderr, "M0-THREAD TSO=enabled teb=%p\n", teb);
++#endif
+ 
+     context.X0  = (DWORD64)entry;
+     context.X1  = (DWORD64)arg;
+@@ -1608,6 +1870,7 @@ __ASM_GLOBAL_FUNC( __wine_syscall_dispatcher,
+                    "2:\tldr x16, [x21]\n\t"     /* table->ServiceTable */
+                    "ldr x23, [x16, x20, lsl 3]\n\t"
+                    "ldr w11, [x18, #0x380]\n\t" /* thread_data->syscall_trace */
++                   MACOS_LEAVE_GUEST
+                    "cbnz x11, " __ASM_LOCAL_LABEL("trace_syscall") "\n\t"
+                    "blr x23\n\t"
+                    "mov sp, x22\n"
+@@ -1629,7 +1892,8 @@ __ASM_GLOBAL_FUNC( __wine_syscall_dispatcher,
+                    "ldp x10, x11, [sp, #0x50]\n\t"
+                    "ldp x12, x13, [sp, #0x60]\n\t"
+                    "ldp x14, x15, [sp, #0x70]\n"
+-                   "2:\tldp x18, x19, [sp, #0x90]\n\t"
++                   "2:\t" MACOS_ENTER_GUEST
++                   "ldp x18, x19, [sp, #0x90]\n\t"
+                    "ldp x20, x21, [sp, #0xa0]\n\t"
+                    "ldp x22, x23, [sp, #0xb0]\n\t"
+                    "ldp x24, x25, [sp, #0xc0]\n\t"
+@@ -1689,12 +1953,14 @@ __ASM_GLOBAL_FUNC( __wine_syscall_dispatcher,
+                    "b " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") "\n"
+ 
+                    __ASM_LOCAL_LABEL("bad_syscall") ":\n\t"
++                   MACOS_LEAVE_GUEST
+                    "mov x0, #0xc0000000\n\t"    /* STATUS_INVALID_SYSTEM_SERVICE */
+                    "movk x0, #0x001c\n\t"
+                    "b " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
+ 
+ __ASM_GLOBAL_FUNC( __wine_syscall_dispatcher_return,
+-                   "ldr w11, [x18, #0x380]\n\t" /* thread_data->syscall_trace */
++                   "ldr x11, [sp, #0x90]\n\t"
++                   "ldr w11, [x11, #0x380]\n\t" /* thread_data->syscall_trace */
+                    "cbnz x11, " __ASM_LOCAL_LABEL("trace_syscall_ret") "\n\t"
+                    "b " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
+ 
+@@ -1738,10 +2004,12 @@ __ASM_GLOBAL_FUNC( __wine_unix_call_dispatcher,
+                    __ASM_CFI(".cfi_offset 28, -0x68\n\t")
+                    "ldr x16, [x0, x1, lsl 3]\n\t"
+                    "mov x0, x2\n\t"             /* args */
++                   MACOS_LEAVE_GUEST
+                    "blr x16\n\t"
+                    "ldr w16, [sp, #0x10c]\n\t"  /* frame->restore_flags */
+                    "cbnz w16, " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") "\n\t"
+                    __ASM_CFI_CFA_IS_AT2(sp, 0x98, 0x02) /* frame->syscall_cfa */
++                   MACOS_ENTER_GUEST
+                    "ldp x18, x19, [sp, #0x90]\n\t"
+                    "ldp x16, x17, [sp, #0xf8]\n\t"
+                    /* switch to user stack */
+diff --git a/dlls/ntdll/unix/sync.c b/dlls/ntdll/unix/sync.c
+index bc9bbf2c30..02cd2ba61d 100644
+--- a/dlls/ntdll/unix/sync.c
++++ b/dlls/ntdll/unix/sync.c
+@@ -56,6 +56,7 @@
+ #include <time.h>
+ #ifdef __APPLE__
+ # include <mach/mach_time.h>
++# include <os/arch/arm64.h>
+ #endif
+ #ifdef HAVE_KQUEUE
+ # include <sys/event.h>
+@@ -2601,6 +2602,20 @@ NTSTATUS system_time_precise( void *args )
+     struct timeval now;
+ #ifdef HAVE_CLOCK_GETTIME
+     struct timespec ts;
++#endif
++#if defined(__APPLE__) && defined(__aarch64__)
++    if (getenv( "AOE2_M0_DIAGNOSTICS" ))
++    {
++        static _Thread_local int reported;
++        if (os_custom_x18_abi_enabled() || sysconf( _SC_PAGESIZE ) != 4096) abort();
++        if (!reported)
++        {
++            fprintf( stderr, "M0-UNIX-CLOCK pages=4096 custom_x18=0\n" );
++            reported = 1;
++        }
++    }
++#endif
++#ifdef HAVE_CLOCK_GETTIME
+ 
+     if (!clock_gettime( CLOCK_REALTIME, &ts ))
+     {
+diff --git a/dlls/ntdll/unix/virtual.c b/dlls/ntdll/unix/virtual.c
+index 781598fced..6ab9eafb05 100644
+--- a/dlls/ntdll/unix/virtual.c
++++ b/dlls/ntdll/unix/virtual.c
+@@ -3676,6 +3676,10 @@ void virtual_init(void)
+         for (i = 0; (*preload_info)[i].size; i++)
+             mmap_add_reserved_area( (*preload_info)[i].addr, (*preload_info)[i].size );
+ 
++    if (getenv("AOE2_M0_DIAGNOSTICS"))
++        fprintf(stderr, "M0-VM preload=%p first=%p size=%lx\n", preload_info,
++                preload_info && *preload_info ? (*preload_info)[0].addr : NULL,
++                preload_info && *preload_info ? (unsigned long)(*preload_info)[0].size : 0);
+     mmap_init( preload_info ? *preload_info : NULL );
+ 
+     if ((preload = getenv("WINEPRELOADRESERVE")))
+diff --git a/loader/main.c b/loader/main.c
+index f8b113f313..14a3b86585 100644
+--- a/loader/main.c
++++ b/loader/main.c
+@@ -36,6 +36,9 @@
+ #endif
+ #ifdef __APPLE__
+ # include <mach-o/dyld.h>
++# include <spawn.h>
++# include <sys/wait.h>
++# include <errno.h>
+ #endif
+ 
+ #include "main.h"
+@@ -74,6 +77,15 @@ static void init_reserved_areas(void)
+     }
+ }
+ 
++#elif defined(__APPLE__) && defined(__aarch64__)
++/* The entitled layout reserves PAGEZERO for Windows low-address mappings. */
++static const struct wine_preload_info preload_info[] =
++{
++    { (void *)0x10000, 0xffff0000 },
++    { 0, 0 }
++};
++const __attribute((visibility("default"))) struct wine_preload_info *wine_main_preload_info = preload_info;
++static void init_reserved_areas(void) {}
+ #else
+ 
+ /* the preloader will set this variable */
+@@ -175,6 +187,26 @@ int main( int argc, char *argv[] )
+ {
+     void *handle;
+ 
++#if defined(__APPLE__) && defined(__aarch64__)
++    if (sysconf( _SC_PAGESIZE ) != 4096)
++    {
++        extern char **environ;
++        posix_spawnattr_t attr;
++        pid_t child, waited;
++        int err, status;
++        if ((err = posix_spawnattr_init( &attr ))) goto spawn_error;
++        err = posix_spawnattr_set_4k_page_size_np( &attr );
++        if (!err) err = posix_spawn( &child, get_self_exe(), NULL, &attr, argv, environ );
++        posix_spawnattr_destroy( &attr );
++        if (err) goto spawn_error;
++        do { waited = waitpid( child, &status, 0 ); } while (waited < 0 && errno == EINTR);
++        if (waited < 0) { perror("wine: waitpid"); return 1; }
++        return WIFEXITED(status) ? WEXITSTATUS(status) : 128 + WTERMSIG(status);
++    spawn_error:
++        fprintf( stderr, "wine: 4 KiB spawn failed: %s\n", strerror(err) );
++        return 1;
++    }
++#endif
+     init_reserved_areas();
+ 
+     if ((handle = try_dlopen( get_self_exe() )) ||

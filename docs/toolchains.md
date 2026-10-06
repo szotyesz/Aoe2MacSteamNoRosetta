@@ -1,7 +1,6 @@
 # P1.1 — Host toolchain and build-tool inventory
 
-Date: 2026-10-05. Recorded on the local POC host. This is the native Darwin side only; the
-Windows-PE (LLVM/MinGW) compiler family is a separate P1.3 work item and is NOT present yet.
+Date: 2026-10-05. Recorded on the local POC host. The native Darwin inventory and installed Windows PE compiler are recorded below.
 
 ## P0-BASE re-run (required before toolchain work)
 
@@ -141,30 +140,25 @@ TC-HOST is the only probe executed (natively). TC-A64/EC/X64/X86 are compile+ins
 | TC-X64 | PE machine AMD64 (0x8664) | — |
 | TC-X86 | PE machine I386 (0x14C) | satisfies plan's "i386 compiler check before M2" |
 
-### Selected Wine host configuration (P1 exit evidence) — SUCCESS
+### M0 build configuration (2026-10-06)
 
-On the Darwin ARM64 host, the pinned willfaust Wine fork configures cleanly. Working command
-(encoded in `scripts/build-wine.sh`, run out-of-tree):
+M0 builds Wine 11.4 at the exact upstream base recorded in `sources.lock.json`, plus
+`patches/wine-m0/0001-native-arm64-macos.patch`. Both host executables are thin ARM64
+Mach-O; Windows modules and probes use plain ARM64 (0xAA64), not ARM64EC.
 
-```sh
-export PATH="/opt/homebrew/bin:/opt/homebrew/opt/bison/bin:$PATH"
-# ADAPT: wine hard-includes build/madeira_cfg.h from ntdll (sync.c/system.c); the wine
-# tree's .gitignore excludes /build/, so copy the pinned Madeira build input in:
-cp "$WORK/sources/madeira/build/madeira_cfg.h" "$WORK/sources/wine-fork/build/madeira_cfg.h"
-cd "$WORK/build/wine"
-"$WORK/sources/wine-fork/configure" --enable-archs=arm64ec --without-freetype
-```
+`scripts/build-wine.sh` sets `SDKROOT` explicitly when invoking the compiler by its
+absolute `xcrun` path. It uses the installed LLVM/MinGW compiler for PE outputs,
+Homebrew bison 3.8.2, deployment target 26.5, `ac_cv_func_pipe2=no`, and
+`-Werror=unguarded-availability-new`. SDK 27 provides a weak `pipe2` import that is
+absent on this macOS 26.x runtime; the portable fallback is necessary.
 
-Result (`$WORK/build/wine/`): `./configure` exit 0 → "Do 'make' to compile Wine"; a 46 MB
-`Makefile` + `include/config.h` generated. Key config values:
+The console-only profile disables NDIS, winebus, winebth, wineusb, mountmgr and nsiproxy drivers. They
+request executable heaps; RWX commit fails on this host and their unchecked null
+heap causes startup crashes. These drivers and executable heaps need a separate
+implementation/test gate before later device-dependent workloads. No failure is
+reported as a successful allocation. Other optional dependencies (FreeType,
+FFmpeg, Vulkan, audio) are outside this console acceptance stage.
 
-- `build` = `host` = `aarch64-apple-darwin25.6.0` (native Darwin host)
-- `HOST_ARCH='aarch64'`, `PE_ARCHS=' arm64ec'` (x86_64 auto-added as `extra_arch`)
-- `ac_cv_prog_arm64ec_CC=arm64ec-w64-mingw32-clang`, `ac_cv_prog_x86_64_CC=x86_64-w64-mingw32-gcc`
-- `wineserver` build entries present; `ntdll`/`kernel32` **arm64ec-windows PE module rules**
-  present (`dlls/ntdll/arm64ec-windows/libntdll.a`, `.../libkernel32.a`); 69,035 `arm64ec`
-  references in the Makefile.
-
-Optional-dependency warnings only (FFmpeg, Vulkan, audio, FreeType via `--without-freetype`);
-no errors. This satisfies plan §7 P1 exit "selected Wine host configuration succeeds." `make`
-is the M0 entry point (not run until M0 is authorized).
+The earlier Madeira ARM64EC configuration succeeded, but `make` failed on iOS-only
+win32u hooks. It remains a source reference for M1, not M0 build evidence. See
+[source selection](source-selection.md) and [M0 results](m0-results.md).

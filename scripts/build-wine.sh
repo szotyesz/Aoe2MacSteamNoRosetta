@@ -1,65 +1,74 @@
 #!/usr/bin/env bash
-# P1.4 — first concrete ARM64 build steps: the selected Wine (willfaust fork).
-#
-# Records the WORKING Darwin-host build recipe (verified by a successful
-# `./configure` on this M4 host, plan §7 P1 exit "selected Wine host
-# configuration succeeds"). The result is a native aarch64 Darwin host (Wine
-# server/ntdll-host objects) plus ARM64EC + i386 PE guest modules (ntdll PE,
-# kernel32 PE, ...). Do NOT run this to completion until M0 is authorized:
-# `make` is a long build; this script exists to make the first build steps
-# concrete and reproducible.
-#
-# Usage:
-#   scripts/build-wine.sh            # configure + build (make -j)
-#   scripts/build-wine.sh configure  # configure only
-#   scripts/build-wine.sh make       # build only (after configure)
-#
-# Prereqs (see docs/toolchains.md): llvm-mingw PE toolchain at $AOE2_WORK_ROOT
-# (from P1.4 fetch), Homebrew cmake/ninja/meson/pkgconf + keg-only bison, and
-# the pinned madeira + wine-fork sources at $AOE2_WORK_ROOT/sources.
-set -uo pipefail
-
-export PATH="/opt/homebrew/bin:/opt/homebrew/opt/bison/bin:$PATH"
-WORK="${AOE2_WORK_ROOT:-/Users/szotyesz/aoe2-poc-work}"
-WINE="$WORK/sources/wine-fork"
-MADEIRA="$WORK/sources/madeira"
-BUILD="$WORK/build/wine"
-JOBS="$(sysctl -n hw.ncpu 2>/dev/null || echo 4)"
+# Native ARM64 M0 build, isolated from Madeira's iOS runtime changes.
+# Usage: scripts/build-wine.sh [all|prepare|configure|make]
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+WORK="${AOE2_WORK_ROOT:-$HOME/aoe2-poc-work}"
+SOURCE="$WORK/sources/wine-m0"
+BUILD="$WORK/build/wine-m0"
+BASE=cc893ef9cb17b994bfd1f1a1f7355be55e615623
+PATCH="$ROOT/patches/wine-m0/0001-native-arm64-macos.patch"
 STEP="${1:-all}"
+export SDKROOT="$(xcrun --show-sdk-path)"
+export PATH="$WORK/toolchains/llvm-mingw-20260421-ucrt-macos-universal/bin:/opt/homebrew/opt/bison/bin:/opt/homebrew/bin:$PATH"
 
-[ -d "$WINE" ]   || { echo "FATAL: wine-fork not found at $WINE (run scripts/fetch-sources.sh)"; exit 2; }
-[ -d "$MADEIRA" ] || { echo "FATAL: madeira not found at $MADEIRA (run scripts/fetch-sources.sh)"; exit 2; }
-
-# ---- ADAPT (M0 build input): the wine fork hard-includes
-#      build/madeira_cfg.h from ntdll (sync.c / system.c). The wine tree's
-#      .gitignore excludes /build/, so copy the pinned Madeira build input in.
-echo "[adapt] placing build input sources/wine-fork/build/madeira_cfg.h"
-mkdir -p "$WINE/build"
-cp -f "$MADEIRA/build/madeira_cfg.h" "$WINE/build/madeira_cfg.h"
-echo "  -> $(wc -l < "$WINE/build/madeira_cfg.h") lines from $MADEIRA"
-
-configure(){
-  echo "[configure] Wine (willfaust) on $(uname -m) Darwin host"
-  mkdir -p "$BUILD"
-  ( cd "$BUILD" && "$WINE/configure" \
-      --enable-archs=arm64ec \
-      --without-freetype \
-      2>&1 | tee "$BUILD/config.configure.out" )
-  local rc=${PIPESTATUS[0]}
-  echo "  configure exit: $rc"
-  [ "$rc" -eq 0 ] && [ -f "$BUILD/Makefile" ]
+prepare() {
+    if [ ! -e "$SOURCE" ]; then
+        mkdir -p "$SOURCE"
+        git -C "$SOURCE" init -q
+        git -C "$SOURCE" remote add origin https://github.com/willfaust/wine.git
+        git -C "$SOURCE" fetch --depth 1 origin "$BASE"
+        git -C "$SOURCE" checkout --detach FETCH_HEAD
+    fi
+    test "$(git -C "$SOURCE" rev-parse HEAD)" = "$BASE" || {
+        echo "Wrong M0 base; refusing to change $SOURCE" >&2; exit 1;
+    }
+    if [ -z "$(git -C "$SOURCE" status --porcelain)" ]; then
+        git -C "$SOURCE" apply --check "$PATCH"
+        git -C "$SOURCE" apply "$PATCH"
+    else
+        # Idempotence is permitted only when the complete diff matches ours.
+        local actual expected
+        actual="$(git -C "$SOURCE" diff --binary --no-ext-diff | shasum -a 256)"
+        expected="$(shasum -a 256 < "$PATCH")"
+        test "$actual" = "$expected" || {
+            echo "M0 tree contains a different diff; preserve it and inspect manually." >&2; exit 1;
+        }
+        test -z "$(git -C "$SOURCE" ls-files --others --exclude-standard)" || {
+            echo "M0 tree contains untracked files; refusing to proceed." >&2; exit 1;
+        }
+        git -C "$SOURCE" apply --reverse --check "$PATCH"
+    fi
 }
-
-build(){
-  [ -f "$BUILD/Makefile" ] || { echo "FATAL: no Makefile (run configure first)"; exit 1; }
-  echo "[make] -j$JOBS (long; this is the M0 entry point — abort with Ctrl-C if not ready)"
-  ( cd "$BUILD" && make -j"$JOBS" 2>&1 | tee "$BUILD/make.out" )
+configure() {
+    # Reconfiguration does not remove disabled outputs from an older build.
+    for driver in ndis winebus winebth wineusb mountmgr nsiproxy; do
+        if [ -e "$BUILD/dlls/$driver.sys/aarch64-windows/$driver.sys" ]; then
+            echo "Existing driver output in $BUILD; preserve this directory and use a clean M0 build directory." >&2
+            exit 1
+        fi
+    done
+    mkdir -p "$BUILD"
+    # SDK 27 declares pipe2, but our macOS 26.x runtime does not supply it.
+    # Keep the portable pipe+fcntl implementation until the minimum OS changes.
+    (cd "$BUILD" && ac_cv_func_pipe2=no "$SOURCE/configure" \
+        --enable-archs=aarch64 --without-freetype --disable-tests \
+        --disable-ndis.sys --disable-winebus.sys --disable-winebth.sys --disable-wineusb.sys \
+        --disable-mountmgr.sys --disable-nsiproxy.sys \
+        CC="$(xcrun --find clang)" CXX="$(xcrun --find clang++)" \
+        CFLAGS='-O2 -g -mmacosx-version-min=26.5 -Werror=unguarded-availability-new' \
+        LDFLAGS='-mmacosx-version-min=26.5' 2>&1 | tee configure.log)
 }
-
+build() {
+    test -f "$BUILD/Makefile" || { echo "Run configure first." >&2; exit 1; }
+    # pipefail ensures signing never hides a failed compile/link.
+    (cd "$BUILD" && make -j"${AOE2_JOBS:-6}" 2>&1 | tee make.log)
+    "$ROOT/scripts/sign-runtime.sh"
+}
 case "$STEP" in
-  configure) configure || { echo "configure FAILED"; exit 1; } ;;
-  make)      build      || { echo "make FAILED"; exit 1; } ;;
-  all)       configure && build ;;
-  *) echo "usage: $0 [configure|make|all]"; exit 2 ;;
+    prepare) prepare ;;
+    configure) prepare; configure ;;
+    make) prepare; build ;;
+    all) prepare; configure; build ;;
+    *) echo "Usage: $0 [all|prepare|configure|make]" >&2; exit 2 ;;
 esac
-echo "[done] $STEP"

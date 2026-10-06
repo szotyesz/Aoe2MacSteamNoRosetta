@@ -4,8 +4,8 @@
   "baseline_commit": "bfac0ac",
   "work_root": "/Users/szotyesz/aoe2-poc-work",
   "verification": {
-    "method": "Each component was blobless-cloned (--filter=blob:none, no submodule init) and its `git rev-parse HEAD` matched the plan §16 snapshot pins AND the Madeira superproject `.gitmodules` gitlinks. Tarball SHA-256 recomputed locally.",
-    "note": "The on-disk SHAs agree with the authoritative pins in aoe2de-no-rosetta-plan.md §16 (lines 55-58). Submodule working trees are NOT populated (P1.2 scope); gitlink SHAs below are the recorded/expected values needed to initialize them later.",
+    "method": "Each component was blobless-cloned (--filter=blob:none, no submodule init) and its `git rev-parse HEAD` matched the plan \u00a716 snapshot pins AND the Madeira superproject `.gitmodules` gitlinks. Tarball SHA-256 recomputed locally.",
+    "note": "The on-disk SHAs agree with the authoritative pins in aoe2de-no-rosetta-plan.md \u00a716 (lines 55-58). Submodule working trees are NOT populated (P1.2 scope); gitlink SHAs below are the recorded/expected values needed to initialize them later.",
     "download_verification": "LLVM/MinGW tarball downloaded and SHA-256 verified locally. Git provenance of the git-based components is by SHA match, not by content hash."
   },
   "superproject": {
@@ -19,7 +19,7 @@
   "components": {
     "wine": {
       "name": "wine-fork",
-      "role": "native Darwin host + ARM64EC/i386 PE guest farm (selected Wine)",
+      "role": "Madeira integration reference for M1; M0 uses the upstream base recorded in m0",
       "local_path": "sources/wine-fork",
       "url": "https://github.com/willfaust/wine.git",
       "branch": "madeira-lgpl",
@@ -36,22 +36,71 @@
       "commit": "be778d7ba5b98bee0405fd1d6a50d305a0807df0",
       "madeira_gitlink_match": true,
       "submodules": {
-        "External/Catch2": { "url": "https://github.com/catchorg/Catch2.git", "commit": "b3fb4b9feafcd8d91c5cb510a4775143fdbef02f" },
-        "External/Vulkan-Headers": { "url": "https://github.com/KhronosGroup/Vulkan-Headers.git", "commit": "450bd2232225d6c7728a4108055ac2e37cef6475" },
-        "External/drm-headers": { "url": "https://github.com/FEX-Emu/drm-headers.git", "commit": "3e49836995c1dcb3df709440ad2f270b569c6a5f" },
-        "External/fex-gcc-target-tests-bins": { "url": "https://github.com/FEX-Emu/fex-gcc-target-tests-bins.git", "commit": "442678a134e2d25e759c430cca32e06e9e142f1f" },
-        "External/fex-gvisor-tests-bins": { "url": "https://github.com/FEX-Emu/fex-gvisor-tests-bins.git", "commit": "71349ae6d14ac2e3e792730e240aecd8076cee6c" },
-        "External/fex-posixtest-bins": { "url": "https://github.com/FEX-Emu/fex-posixtest-bins.git", "commit": "9ae29638f8000c1603f16385ed1cf6c4c23ee414" },
-        "External/fmt": { "url": "https://github.com/fmtlib/fmt.git", "commit": "407c905e45ad75fc29bf0f9bb7c5c2fd3475976f" },
-        "External/jemalloc_glibc": { "url": "https://github.com/FEX-Emu/jemalloc.git", "commit": "8436195ad5e1bc347d9b39743af3d29abee59f06" },
-        "External/range-v3": { "url": "https://github.com/ericniebler/range-v3.git", "commit": "ca1388fb9da8e69314dda222dc7b139ca84e092f" },
-        "External/rpmalloc": { "url": "https://github.com/willfaust/rpmalloc.git", "branch": "ios-madeira", "commit": "812c2b9cf4310ffacf14e6b64066e78ab0c394b5" },
-        "External/tracy": { "url": "https://github.com/wolfpld/tracy", "commit": "650c98ece70da9e155e7ba1c2b3ee16004aae118" },
-        "External/unordered_dense": { "url": "https://github.com/martinus/unordered_dense.git", "commit": "3234af2c03549bc85656bfd3a86993bf1cd8aef1" },
-        "External/vixl": { "url": "https://github.com/FEX-Emu/vixl.git", "commit": "5f418449c48f6ca3ad37c47ec632f17a561c0580" },
-        "External/xxhash": { "url": "https://github.com/Cyan4973/xxHash.git", "commit": "e626a72bc2321cd320e953a0ccf1584cad60f363" },
-        "External/zydis": { "url": "https://github.com/zyantific/zydis.git", "commit": "9bfadd6a55fc92dbd37fa3ba089bf8b36622df4f" },
-        "Source/Common/cpp-optparse": { "url": "https://github.com/Sonicadvance1/cpp-optparse", "commit": "9f94388a339fcbb0bc95c17768eb786c85988f6e" }
+        "External/Catch2": {
+          "url": "https://github.com/catchorg/Catch2.git",
+          "commit": "b3fb4b9feafcd8d91c5cb510a4775143fdbef02f"
+        },
+        "External/Vulkan-Headers": {
+          "url": "https://github.com/KhronosGroup/Vulkan-Headers.git",
+          "commit": "450bd2232225d6c7728a4108055ac2e37cef6475"
+        },
+        "External/drm-headers": {
+          "url": "https://github.com/FEX-Emu/drm-headers.git",
+          "commit": "3e49836995c1dcb3df709440ad2f270b569c6a5f"
+        },
+        "External/fex-gcc-target-tests-bins": {
+          "url": "https://github.com/FEX-Emu/fex-gcc-target-tests-bins.git",
+          "commit": "442678a134e2d25e759c430cca32e06e9e142f1f"
+        },
+        "External/fex-gvisor-tests-bins": {
+          "url": "https://github.com/FEX-Emu/fex-gvisor-tests-bins.git",
+          "commit": "71349ae6d14ac2e3e792730e240aecd8076cee6c"
+        },
+        "External/fex-posixtest-bins": {
+          "url": "https://github.com/FEX-Emu/fex-posixtest-bins.git",
+          "commit": "9ae29638f8000c1603f16385ed1cf6c4c23ee414"
+        },
+        "External/fmt": {
+          "url": "https://github.com/fmtlib/fmt.git",
+          "commit": "407c905e45ad75fc29bf0f9bb7c5c2fd3475976f"
+        },
+        "External/jemalloc_glibc": {
+          "url": "https://github.com/FEX-Emu/jemalloc.git",
+          "commit": "8436195ad5e1bc347d9b39743af3d29abee59f06"
+        },
+        "External/range-v3": {
+          "url": "https://github.com/ericniebler/range-v3.git",
+          "commit": "ca1388fb9da8e69314dda222dc7b139ca84e092f"
+        },
+        "External/rpmalloc": {
+          "url": "https://github.com/willfaust/rpmalloc.git",
+          "branch": "ios-madeira",
+          "commit": "812c2b9cf4310ffacf14e6b64066e78ab0c394b5"
+        },
+        "External/tracy": {
+          "url": "https://github.com/wolfpld/tracy",
+          "commit": "650c98ece70da9e155e7ba1c2b3ee16004aae118"
+        },
+        "External/unordered_dense": {
+          "url": "https://github.com/martinus/unordered_dense.git",
+          "commit": "3234af2c03549bc85656bfd3a86993bf1cd8aef1"
+        },
+        "External/vixl": {
+          "url": "https://github.com/FEX-Emu/vixl.git",
+          "commit": "5f418449c48f6ca3ad37c47ec632f17a561c0580"
+        },
+        "External/xxhash": {
+          "url": "https://github.com/Cyan4973/xxHash.git",
+          "commit": "e626a72bc2321cd320e953a0ccf1584cad60f363"
+        },
+        "External/zydis": {
+          "url": "https://github.com/zyantific/zydis.git",
+          "commit": "9bfadd6a55fc92dbd37fa3ba089bf8b36622df4f"
+        },
+        "Source/Common/cpp-optparse": {
+          "url": "https://github.com/Sonicadvance1/cpp-optparse",
+          "commit": "9f94388a339fcbb0bc95c17768eb786c85988f6e"
+        }
       }
     },
     "dxmt": {
@@ -63,8 +112,14 @@
       "commit": "8937c08c38f5cb867d995f99b2323739a9f6ffdf",
       "madeira_gitlink_match": true,
       "submodules": {
-        "external/nvapi": { "url": "https://github.com/NVIDIA/nvapi.git", "commit": "d08488fcc82eef313b0464db37d2955709691e94" },
-        "include/native/directx": { "url": "https://github.com/misyltoad/mingw-directx-headers", "commit": "9df86f2341616ef1888ae59919feaa6d4fad693d" }
+        "external/nvapi": {
+          "url": "https://github.com/NVIDIA/nvapi.git",
+          "commit": "d08488fcc82eef313b0464db37d2955709691e94"
+        },
+        "include/native/directx": {
+          "url": "https://github.com/misyltoad/mingw-directx-headers",
+          "commit": "9df86f2341616ef1888ae59919feaa6d4fad693d"
+        }
       }
     },
     "madeira-dock": {
@@ -98,5 +153,33 @@
       "bison": "3.8.2 (keg-only at /opt/homebrew/opt/bison/bin/bison; system bison is 2.3)",
       "host_cc": "Apple clang 21.0.0 (CLT), SDK 27.0"
     }
+  },
+  "m0": {
+    "source_url": "https://github.com/willfaust/wine.git",
+    "source_commit": "cc893ef9cb17b994bfd1f1a1f7355be55e615623",
+    "source_description": "Wine 11.4 upstream base from the fetched Madeira Wine history; excludes iOS changes",
+    "local_path": "sources/wine-m0",
+    "build_path": "build/wine-m0",
+    "pe_architectures": [
+      "aarch64"
+    ],
+    "deployment_target": "26.5",
+    "configure_cache": {
+      "ac_cv_func_pipe2": "no"
+    },
+    "patches": [
+      "patches/wine-m0/0001-native-arm64-macos.patch"
+    ],
+    "note": "M0 uses plain ARM64 PE and a separate native wineserver. ARM64EC/FEX integration remains M1.",
+    "profile": "console-only",
+    "disabled_device_drivers": [
+      "ndis.sys",
+      "winebus.sys",
+      "winebth.sys",
+      "wineusb.sys",
+      "mountmgr.sys",
+      "nsiproxy.sys"
+    ],
+    "known_gap": "Writable/executable heap commit fails on this host; restore and test device drivers after solving it."
   }
 }

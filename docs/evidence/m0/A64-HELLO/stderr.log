@@ -1,0 +1,127 @@
+M0-VM preload=0x1029a4000 first=0x10000 size=ffff0000
+wine: created the configuration directory '/Users/szotyesz/aoe2-poc-work/runs/m0-20261006T052156671425Z/prefix'
+M0-VM preload=0x1001a7000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6064 teb=0x7ffc0000
+M0-VM preload=0x104ad1000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ffa0000
+M0-VM preload=0x100348000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6072 teb=0x7ffc0000
+M0-VM preload=0x104b82000 first=0x10000 size=ffff0000
+M0-VM preload=0x1021d3000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6077 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6078 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6078 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6078 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff90000
+M0-THREAD TSO=enabled teb=0x7ff80000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff80000
+M0-THREAD TSO=enabled teb=0x7ff70000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff70000
+M0-VM preload=0x1023c2000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6081 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff60000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff60000
+M0-THREAD TSO=enabled teb=0x7ff50000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff50000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6081 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6081 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6081 teb=0x7ff90000
+M0-THREAD TSO=enabled teb=0x7ff40000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff40000
+M0-THREAD TSO=enabled teb=0x7ff30000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff30000
+M0-VM preload=0x100205000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6089 teb=0x7ffc0000
+M0-VM preload=0x102588000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6103 teb=0x7ffc0000
+M0-VM preload=0x102c9e000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6109 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff60000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff60000
+M0-VM preload=0x1026b7000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6112 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff90000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6112 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6112 teb=0x7ffa0000
+M0-VM preload=0x100d56000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6115 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff20000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff20000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6115 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6115 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6115 teb=0x7ff90000
+M0-VM preload=0x104f1a000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6118 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff10000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff10000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6118 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6118 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6118 teb=0x7ff90000
+M0-VM preload=0x10277b000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6121 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff70000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff70000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6121 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6121 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6121 teb=0x7ff90000
+M0-VM preload=0x104f63000 first=0x10000 size=ffff0000
+wine: failed to start L"C:\\windows\\syswow64\\rundll32.exe": c0000135
+M0-VM preload=0x102ec2000 first=0x10000 size=ffff0000
+wine: failed to start L"C:\\windows\\sysarm32\\rundll32.exe": c0000135
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6059 teb=0x7ffc0000
+A64-HELLO-EVIDENCE pid=32 tid=36
+M0-THREAD TSO=enabled teb=0x7ff70000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff70000
+M0-VM preload=0x104ce2000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6130 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff10000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6067 teb=0x7ff10000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6130 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6130 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6130 teb=0x7ff90000
+M0-THREAD TSO=enabled teb=0x7ff80000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6130 teb=0x7ff80000
+M0-THREAD TSO=enabled teb=0x7ff70000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6130 teb=0x7ff70000
+M0-THREAD TSO=enabled teb=0x7ff60000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6130 teb=0x7ff60000

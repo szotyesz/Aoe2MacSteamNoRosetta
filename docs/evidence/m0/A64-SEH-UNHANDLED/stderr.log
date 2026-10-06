@@ -1,0 +1,77 @@
+M0-VM preload=0x102086000 first=0x10000 size=ffff0000
+M0-VM preload=0x102902000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6314 teb=0x7ffc0000
+M0-VM preload=0x100ca2000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6317 teb=0x7ffc0000
+M0-VM preload=0x1001ac000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ffb0000
+M0-VM preload=0x1002a2000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6323 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ff90000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6323 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6323 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6323 teb=0x7ff90000
+M0-THREAD TSO=enabled teb=0x7ff80000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ff80000
+M0-THREAD TSO=enabled teb=0x7ff70000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ff70000
+M0-VM preload=0x100280000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6326 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff60000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ff60000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6326 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6326 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6326 teb=0x7ff90000
+M0-VM preload=0x100abe000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6329 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff50000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ff50000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6329 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6329 teb=0x7ffa0000
+M0-VM preload=0x104f01000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6332 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff40000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ff40000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6332 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6332 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6332 teb=0x7ff90000
+M0-VM preload=0x10285f000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6335 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6335 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6335 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6335 teb=0x7ff90000
+M0-THREAD TSO=enabled teb=0x7ff30000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6320 teb=0x7ff30000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=6309 teb=0x7ffc0000
+wine: Unhandled page fault on write access to 0000000000001234 at address 0000000140001998 (thread 0024), starting debugger...
+M0-VM preload=0x100297000 first=0x10000 size=ffff0000

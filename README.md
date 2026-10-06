@@ -2,7 +2,7 @@
 
 Local proof of concept for running Windows Steam and Age of Empires II: Definitive Edition through native ARM64 Wine, FEX CPU translation, and DXMT Metal rendering. Work proceeds on a temporary SIP/AMFI-disabled installation while the user investigates entitlement access with Apple. Apple's approval is not a prerequisite for this local POC.
 
-## Verified status — 2026-10-05
+## Verified status — 2026-10-06
 
 The native host capability smoke tests pass on **macOS 26.6.2 (25G83), SDK 27.0**, with SIP disabled and boot argument `amfi_get_out_of_my_way=0x1`:
 
@@ -23,10 +23,39 @@ The script builds a native ARM64 executable in a temporary directory, ad-hoc sig
 
 The test targets macOS 26.5 but has only been verified on 26.6.2. See [test coverage and limitations](tests/platform/README.md).
 
-## Implementation status and next step
+## M0 console runtime — PASS
 
-Only the host capability tests are implemented and verified. Wine, FEX, DXMT, Steam, and AoE2DE execution remain pending. The malformed patch drafts, incorrect Wine build script, placeholder loader, unverified Windows probe, and stale audit/status claims have been removed.
+Native ARM64 Wine now executes plain Windows ARM64 PE programs with a separate
+native wineserver. **32/32 checks pass**: exact hello output/exit 23, individual
+4 KiB memory protection, shared-user-data time, eight concurrent TLS/TEB workers,
+callbacks across native syscall and Unix-call boundaries, handled and unhandled
+exceptions, Unicode file I/O, 20 repeated launches, a fresh prefix, native host
+execution, and server shutdown. The platform smoke tests still pass unchanged.
 
-Next: complete P1.1–P1.2 in [the detailed implementation plan](aoe2de-no-rosetta-plan.md): record native toolchains, inspect actual Wine ARM64 macOS support, and compare the pinned Madeira Wine/FEX/DXMT integration with upstream. Select a source combination before creating patches. The proposed route keeps separate macOS Wine processes and reuses compatible Madeira components selectively. Then verify native Darwin and Windows PE compiler probes and build the first ARM64 Windows console runtime test.
+Reproduce from the repository root:
 
-See [the POC plan](aoe2de-no-rosetta-plan.md), [milestone status](docs/milestones.md), and [entitlement observations](docs/entitlement-audit.md).
+```sh
+./scripts/build-wine.sh
+./scripts/test-m0.py
+```
+
+The build uses the installed LLVM/MinGW toolchain under `$AOE2_WORK_ROOT`
+(default `$HOME/aoe2-poc-work`); source acquisition/toolchain details are in
+[toolchains](docs/toolchains.md). It uses Wine 11.4's pinned upstream base with
+[audited local changes](patches/wine-m0/README.md). Sources, build products and
+fresh test prefixes stay outside this repository. Existing Madeira reference
+checkouts are preserved. The runner records deadlines, exact exit statuses,
+stdout/stderr, source/compiler identity and binary hashes.
+
+This is a **console-only profile**. NDIS, winebus, winebth, wineusb, mountmgr and
+nsiproxy drivers are disabled because Windows executable-heap commit fails on
+this host and their unchecked heap use crashes startup. Device support, those
+network/drive-management services, FEX, DXMT, Steam and AoE2DE are not validated.
+Apple entitlement access remains a parallel inquiry, not a local POC blocker.
+
+Next: implement and test executable memory, restore/test the excluded drivers,
+and complete the M1 ARM64EC/FEX ABI audit before translated application tests.
+See [M0 results and preserved evidence](docs/m0-results.md),
+[the detailed plan](aoe2de-no-rosetta-plan.md),
+[milestone status](docs/milestones.md), and
+[entitlement observations](docs/entitlement-audit.md).

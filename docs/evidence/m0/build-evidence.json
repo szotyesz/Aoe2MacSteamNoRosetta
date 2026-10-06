@@ -1,0 +1,11 @@
+{
+  "build_command": "./scripts/build-wine.sh all",
+  "verification": "Successful configure/make/sign before acceptance; patch applied independently to pristine base; exact source/patch verified",
+  "host_compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+  "logs_sha256": {
+    "/Users/szotyesz/aoe2-poc-work/build/wine-m0/config.log": "2403656430bd5f1f66b03cab21cf612f3224c47f666782eaaf09ccd7527c37c3",
+    "/Users/szotyesz/aoe2-poc-work/build/wine-m0/configure.log": "6ae525c3569cd6a10923ad1729d95cdbb4eebb38410a4200c181ae2ad317b328",
+    "/Users/szotyesz/aoe2-poc-work/build/wine-m0/make.log": "844c5ecfdc511e238ec54cdb36bb4d96d0c1f24f2026d5db64a36baea728872a",
+    "/Users/szotyesz/aoe2-poc-work/build/wine-m0/final-build.log": "33dbea38e221081aa01459a2dc4f71925702058d971b4a243bf460e982bfdcb0"
+  }
+}

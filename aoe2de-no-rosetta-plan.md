@@ -1,6 +1,6 @@
 # AoE2DE on Apple Silicon without Rosetta — implementation plan for a local POC
 
-Updated: 2026-10-05. This is a plan for future implementation. Only the P0 platform smoke test is implemented and passing. The baseline commit is `bfac0ac`.
+Updated: 2026-10-06. P0 passes; native ARM64 console M0 acceptance passes (32/32 checks). See `docs/m0-results.md` for execution evidence and limitations. The platform baseline commit remains `bfac0ac`.
 
 ## 1. Objective, scope, and known facts
 
@@ -16,7 +16,8 @@ The working environment is the user's temporary SIP/AMFI-disabled macOS installa
 | AMFI configuration | `kern.bootargs` includes `amfi_get_out_of_my_way=0x1` | Recorded configuration, not an exhaustive audit |
 | Platform facilities | `scripts/test-platform.sh` passes | 4 KiB spawning, low mapping, x18 mode, TSO API acceptance |
 | Signature | Ad-hoc with unmanaged cross-architecture entitlement | Works locally; no account authorization established |
-| Wine/FEX/DXMT runtime | None built or verified in this repository | Every runtime milestone is pending |
+| Wine runtime | Native ARM64 console M0 build implemented | Console acceptance is tracked in `docs/m0-results.md`; executable heaps/device drivers remain unsupported |
+| FEX/DXMT | Source references and recipes only | M1–M5 remain pending |
 | macOS 26.5 | Probe deployment target only | Execution on 26.5 has not been verified |
 
 This POC does not require a launcher UI. A command-line harness, separate Wine server, separate client processes, local prefix, and captured logs are sufficient. Keep the game and Steam files outside tracked source. Do not change the host's security configuration or substitute Rosetta to get a milestone to pass.
@@ -202,6 +203,28 @@ Complete section 3.3, write `sources.lock.json`, and record exact native/PE buil
 
 ## 8. M0 — execute Windows ARM64 code through native Wine
 
+The implemented console profile uses Wine 11.4 base `cc893ef9cb17b994bfd1f1a1f7355be55e615623`
+plus `patches/wine-m0/0001-native-arm64-macos.patch`. Reproduce with
+`scripts/build-wine.sh` and `scripts/test-m0.py`. Build/VM decisions and actual
+failures are recorded in `docs/source-selection.md` and `docs/m0-results.md`.
+
+Six device drivers are deliberately disabled: NDIS, winebus, winebth, wineusb,
+mountmgr and nsiproxy. Native Windows writable/executable heap commit fails on
+this host and causes unchecked driver heap use to fault. Console M0 does not
+validate those drivers, device enumeration, drive-management services or the
+nsiproxy networking path. Do not run Steam on this profile or mistake their
+absence for a working general Wine port.
+
+Before expanding runtime coverage, add a separate executable-memory gate:
+create `HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, 0, 0)`, allocate/write/free a block,
+then add actual generated ARM64 execution with instruction-cache maintenance,
+write/execute transitions, concurrent threads and fault-state restoration.
+Record native protection and Windows-visible protection independently. Never
+return a read/write-only allocation as executable success. Restore each disabled
+driver and use fresh-prefix startup with no unhandled exceptions as its oracle.
+The FEX JIT allocator requires its own M1 write/execute contract; do not assume
+that solving one of these contracts automatically solves the other.
+
 ### M0.1 Build the native host and minimum Windows modules
 
 Configure out of tree with Darwin host compiler settings. Configure Windows targets through the pinned Wine source's actual PE compiler mechanism. Discover the produced loader name/path; do not assume `wine64` exists. Build the selected Wine server and minimum module set needed for prefix initialization and the probe. Capture `config.log`, generated options, full build output, and final file types.
@@ -240,8 +263,8 @@ Use a fresh M0-only prefix and explicit paths to the selected loader, server, an
 | A64-MEM | `VirtualAlloc` 8192 bytes, change only page 2 protection, query both pages, free | Correct per-page protection/status; writes to page 1 survive; intentionally prohibited access is caught by a separate tested exception fixture |
 | A64-SHARED | Read selected USER_SHARED_DATA fields through a source-verified Windows layout at `0x7ffe0000` | Address mapped, clock fields sane/advance, no access fault; not merely an unrelated scratch mapping |
 | A64-THREAD | Eight workers, each keeps unique TLS data and increments a shared counter with `InterlockedIncrement` 10,000 times | Counter 80,000; TLS values stay distinct; every thread exit code and wait succeeds |
-| A64-CALLBACK | `EnumSystemLocalesEx` invokes a Windows callback; a separate controlled debug hook exercises a native Unix round trip | At least one locale callback and successful enumeration; Unix round-trip returns expected value; guest TEB consistent before/after; native custom mode disabled |
-| A64-SEH | `RaiseException` with an application code, then a deliberate access violation at known address in a separate case | Handler receives exact codes/context and process continues only in handled cases |
+| A64-CALLBACK | `EnumSystemLocalesEx` invokes a Windows callback; the precise-clock Unix entry with opt-in native diagnostics exercises a native Unix round trip | At least one locale callback and successful enumeration; Unix round-trip returns expected value; guest TEB consistent before/after; native custom mode disabled |
+| A64-SEH | `RaiseException` with an application code, then a deliberate access violation at known address; an additional process leaves the access fault unhandled | Handler receives exact codes/context; handled process continues; unhandled process terminates with status 5 and the expected fault address (interactive debugger disabled only for this negative fixture) |
 | A64-IO | Unicode filename with spaces; write/read known bytes; delete | Exact byte comparison, all API results checked |
 | A64-REPEAT | Run A64-HELLO 20 times from one prefix, then once from a fresh prefix | Every exit 23, no hung client/server or stale startup failure |
 | HOST-NATIVE | Inspect executed host binaries, loaded native libraries, and live process architecture | No running Mach-O x86-64 translation; server/loader identity matches selected installation |
