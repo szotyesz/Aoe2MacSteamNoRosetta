@@ -27,6 +27,6 @@ The test targets macOS 26.5 but has only been verified on 26.6.2. See [test cove
 
 Only the host capability tests are implemented and verified. Wine, FEX, DXMT, Steam, and AoE2DE execution remain pending. The malformed patch drafts, incorrect Wine build script, placeholder loader, unverified Windows probe, and stale audit/status claims have been removed.
 
-Next: inspect actual Wine ARM64 macOS sources, verify and pin upstream revisions, and select native Darwin and Windows PE toolchains. Then build native ARM64 Wine and execute a small ARM64 Windows console probe using the local signing approach verified here.
+Next: complete P1.1–P1.2 in [the detailed implementation plan](aoe2de-no-rosetta-plan.md): record native toolchains, inspect actual Wine ARM64 macOS support, and compare the pinned Madeira Wine/FEX/DXMT integration with upstream. Select a source combination before creating patches. The proposed route keeps separate macOS Wine processes and reuses compatible Madeira components selectively. Then verify native Darwin and Windows PE compiler probes and build the first ARM64 Windows console runtime test.
 
 See [the POC plan](aoe2de-no-rosetta-plan.md), [milestone status](docs/milestones.md), and [entitlement observations](docs/entitlement-audit.md).

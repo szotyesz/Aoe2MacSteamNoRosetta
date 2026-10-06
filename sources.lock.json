@@ -1,0 +1,102 @@
+{
+  "$schema": "AoE2DE no-Rosetta POC source lock (plan P1.4)",
+  "generated": "2026-10-06",
+  "baseline_commit": "bfac0ac",
+  "work_root": "/Users/szotyesz/aoe2-poc-work",
+  "verification": {
+    "method": "Each component was blobless-cloned (--filter=blob:none, no submodule init) and its `git rev-parse HEAD` matched the plan §16 snapshot pins AND the Madeira superproject `.gitmodules` gitlinks. Tarball SHA-256 recomputed locally.",
+    "note": "The on-disk SHAs agree with the authoritative pins in aoe2de-no-rosetta-plan.md §16 (lines 55-58). Submodule working trees are NOT populated (P1.2 scope); gitlink SHAs below are the recorded/expected values needed to initialize them later.",
+    "download_verification": "LLVM/MinGW tarball downloaded and SHA-256 verified locally. Git provenance of the git-based components is by SHA match, not by content hash."
+  },
+  "superproject": {
+    "name": "madeira",
+    "role": "integration reference / build orchestration (USE AS REFERENCE ONLY; single-process iOS model excluded)",
+    "local_path": "sources/madeira",
+    "url": "https://github.com/willfaust/Madeira.git",
+    "branch": "main",
+    "commit": "bbbf8d0e20fd8b75f433f4a8d2a8eaf8d5571120"
+  },
+  "components": {
+    "wine": {
+      "name": "wine-fork",
+      "role": "native Darwin host + ARM64EC/i386 PE guest farm (selected Wine)",
+      "local_path": "sources/wine-fork",
+      "url": "https://github.com/willfaust/wine.git",
+      "branch": "madeira-lgpl",
+      "commit": "3a54f56896c85c932870afe6fd91404bbbcb74c8",
+      "madeira_gitlink_match": true,
+      "submodules": []
+    },
+    "fex": {
+      "name": "fex-fork",
+      "role": "ARM64EC JIT (arm64ecfex -> xtajit64.dll) + 32-bit wow64fex at M2",
+      "local_path": "sources/fex-fork",
+      "url": "https://github.com/willfaust/FEX.git",
+      "branch": "ios-port-2607",
+      "commit": "be778d7ba5b98bee0405fd1d6a50d305a0807df0",
+      "madeira_gitlink_match": true,
+      "submodules": {
+        "External/Catch2": { "url": "https://github.com/catchorg/Catch2.git", "commit": "b3fb4b9feafcd8d91c5cb510a4775143fdbef02f" },
+        "External/Vulkan-Headers": { "url": "https://github.com/KhronosGroup/Vulkan-Headers.git", "commit": "450bd2232225d6c7728a4108055ac2e37cef6475" },
+        "External/drm-headers": { "url": "https://github.com/FEX-Emu/drm-headers.git", "commit": "3e49836995c1dcb3df709440ad2f270b569c6a5f" },
+        "External/fex-gcc-target-tests-bins": { "url": "https://github.com/FEX-Emu/fex-gcc-target-tests-bins.git", "commit": "442678a134e2d25e759c430cca32e06e9e142f1f" },
+        "External/fex-gvisor-tests-bins": { "url": "https://github.com/FEX-Emu/fex-gvisor-tests-bins.git", "commit": "71349ae6d14ac2e3e792730e240aecd8076cee6c" },
+        "External/fex-posixtest-bins": { "url": "https://github.com/FEX-Emu/fex-posixtest-bins.git", "commit": "9ae29638f8000c1603f16385ed1cf6c4c23ee414" },
+        "External/fmt": { "url": "https://github.com/fmtlib/fmt.git", "commit": "407c905e45ad75fc29bf0f9bb7c5c2fd3475976f" },
+        "External/jemalloc_glibc": { "url": "https://github.com/FEX-Emu/jemalloc.git", "commit": "8436195ad5e1bc347d9b39743af3d29abee59f06" },
+        "External/range-v3": { "url": "https://github.com/ericniebler/range-v3.git", "commit": "ca1388fb9da8e69314dda222dc7b139ca84e092f" },
+        "External/rpmalloc": { "url": "https://github.com/willfaust/rpmalloc.git", "branch": "ios-madeira", "commit": "812c2b9cf4310ffacf14e6b64066e78ab0c394b5" },
+        "External/tracy": { "url": "https://github.com/wolfpld/tracy", "commit": "650c98ece70da9e155e7ba1c2b3ee16004aae118" },
+        "External/unordered_dense": { "url": "https://github.com/martinus/unordered_dense.git", "commit": "3234af2c03549bc85656bfd3a86993bf1cd8aef1" },
+        "External/vixl": { "url": "https://github.com/FEX-Emu/vixl.git", "commit": "5f418449c48f6ca3ad37c47ec632f17a561c0580" },
+        "External/xxhash": { "url": "https://github.com/Cyan4973/xxHash.git", "commit": "e626a72bc2321cd320e953a0ccf1584cad60f363" },
+        "External/zydis": { "url": "https://github.com/zyantific/zydis.git", "commit": "9bfadd6a55fc92dbd37fa3ba089bf8b36622df4f" },
+        "Source/Common/cpp-optparse": { "url": "https://github.com/Sonicadvance1/cpp-optparse", "commit": "9f94388a339fcbb0bc95c17768eb786c85988f6e" }
+      }
+    },
+    "dxmt": {
+      "name": "dxmt-fork",
+      "role": "D3D11->Metal bridge (ARM64EC PE winemetal/d3d11) + native macOS Metal (M3; stubbed M0-M2)",
+      "local_path": "sources/dxmt-fork",
+      "url": "https://github.com/willfaust/dxmt.git",
+      "branch": "ios-port",
+      "commit": "8937c08c38f5cb867d995f99b2323739a9f6ffdf",
+      "madeira_gitlink_match": true,
+      "submodules": {
+        "external/nvapi": { "url": "https://github.com/NVIDIA/nvapi.git", "commit": "d08488fcc82eef313b0464db37d2955709691e94" },
+        "include/native/directx": { "url": "https://github.com/misyltoad/mingw-directx-headers", "commit": "9df86f2341616ef1888ae59919feaa6d4fad693d" }
+      }
+    },
+    "madeira-dock": {
+      "name": "madeira-dock",
+      "role": "OPTIONAL, NOT FETCHED (M2 Steam-UI fallback experiment only)",
+      "local_path": "sources/madeira-dock",
+      "url": "https://github.com/willfaust/madeira-dock.git",
+      "branch": "main",
+      "commit": "3cadfbea700e4da4b04e331dd7ef1ba633dfacef"
+    }
+  },
+  "toolchains": {
+    "llvm-mingw": {
+      "name": "llvm-mingw-20260421-ucrt-macos-universal",
+      "role": "Windows-PE cross-compiler: arm64ec / i686 / x86_64 / aarch64 + llvm-readobj/objdump",
+      "url": "https://github.com/mstorsjo/llvm-mingw/releases/tag/20260421",
+      "artifact": "llvm-mingw-20260421-ucrt-macos-universal.tar.xz",
+      "local_tarball": "toolchains/llvm-mingw-20260421-ucrt-macos-universal.tar.xz",
+      "sha256": "bd85a3975723815cef28dbbd2ca2cb0c926f6b348a12a0453f39f7af273cb3f7",
+      "size_bytes": 121909316,
+      "sha256_verified_locally": true,
+      "clang_version": "22.1.4",
+      "note": "universal (x86_64+arm64) host build; all four PE targets + LLVM binutils confirmed present and executing on the ARM64 host (P1.3)."
+    },
+    "host_build_tools": {
+      "source": "Homebrew + Command Line Tools",
+      "cmake": "4.4.4",
+      "ninja": "1.13.2",
+      "meson": "1.12.1",
+      "pkgconf": "3.0.7",
+      "bison": "3.8.2 (keg-only at /opt/homebrew/opt/bison/bin/bison; system bison is 2.3)",
+      "host_cc": "Apple clang 21.0.0 (CLT), SDK 27.0"
+    }
+  }
+}
