@@ -20,6 +20,11 @@ Steam or AoE2DE. The original platform probe remains unchanged and passes.
 
 Next: solve the executable-memory contract and restore/test NDIS, winebus,
 winebth, wineusb, mountmgr and nsiproxy before broader application work. In
+the [focused executable-memory probes](executable-memory.md), explicit RW/RX
+transitions pass; executable heaps and RWX execution still fail (34/41). EM-1
+identified host EACCES for RWX, inconsistent Wine protection state and a
+failed-heap reservation leak; the EM-2 candidate profile fixes those failure
+paths (39/41); EM-3 selects a host mechanism for real RWX semantics next. In
 parallel, the next source task is M1's concrete ARM64EC/FEX ABI map and selection;
 Madeira's iOS runtime assumptions still require individual adaptation. See
 [the detailed plan](../aoe2de-no-rosetta-plan.md) for explicit tests and gates.

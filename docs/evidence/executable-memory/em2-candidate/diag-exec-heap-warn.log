@@ -1,0 +1,11 @@
+0070:warn:virtual:mprotect_range mprotect 0x810000-0x81ffff unix prot 0x7 failed: Permission denied
+0070:warn:heap:allocate_region Could not commit 0x10000 bytes, status 0xc0000022
+0094:warn:virtual:mprotect_range mprotect 0x16f0000-0x16fffff unix prot 0x7 failed: Permission denied
+0094:warn:heap:allocate_region Could not commit 0x10000 bytes, status 0xc0000022
+00dc:warn:virtual:mprotect_range mprotect 0x710000-0x71ffff unix prot 0x7 failed: Permission denied
+00dc:warn:heap:allocate_region Could not commit 0x10000 bytes, status 0xc0000022
+00f4:warn:virtual:mprotect_range mprotect 0x710000-0x71ffff unix prot 0x7 failed: Permission denied
+00f4:warn:heap:allocate_region Could not commit 0x10000 bytes, status 0xc0000022
+0024:warn:virtual:mprotect_range mprotect 0x7f0000-0x7fffff unix prot 0x7 failed: Permission denied
+0024:warn:heap:allocate_region Could not commit 0x10000 bytes, status 0xc0000022
+FAIL $HOME/Aoe2MacSteamNoRosetta/tests/m0/runtime.c:90: heap (error=8)

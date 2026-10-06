@@ -1,0 +1,7 @@
+commit NtAllocateVirtualMemory 00000000006F1000 status=0xc0000022 error=0
+query 00000000006F1000 state=0x2000 protect=0x0 base=00000000006F0000 size=0xf000
+query 00000000006F1000 state=0x1000 protect=0x4 base=00000000006F0000 size=0x1000
+commit VirtualAlloc 00000000006F2000 status=0xffffffff error=5
+query 00000000006F2000 state=0x2000 protect=0x0 base=00000000006F0000 size=0xe000
+query 00000000006F2000 state=0x1000 protect=0x4 base=00000000006F0000 size=0x1000
+M0 exec-commit PASS

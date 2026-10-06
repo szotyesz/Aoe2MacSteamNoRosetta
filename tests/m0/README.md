@@ -13,3 +13,19 @@ This is M0, not an x64/FEX, graphics, Steam, or multiplayer test. Results are ma
 The M0 build deliberately omits NDIS, winebus, winebth, wineusb, mountmgr and nsiproxy device drivers.
 Their executable heaps currently fail on this host. They are outside console M0;
 resolve executable memory and restore/test the drivers before broader runtime work.
+
+Run `scripts/test-m0.py --exec-memory` for the 32 baseline checks plus three
+executable-memory probes. This extension remains a failing acceptance gate:
+`exec-heap` creates an executable heap and runs/replaces ARM64 code;
+`exec-rwx` allocates at `0x60000000` with read/write/execute permissions and
+runs/replaces code; `exec-transition` writes with RW permissions, changes to RX,
+runs, returns to RW to rewrite, then changes to RX and runs again. Each successful
+execution must return exactly 42 then 43 after instruction-cache flushes.
+Six EM-1 state cases (`exec-commit`, `exec-protect`, `exec-alloc-state`,
+`exec-rollback`, `exec-protect-span`, `exec-heap-leak`) accept success or failure
+of an executable request but require `VirtualQuery` state to match real accesses
+and failed executable heaps not to leak reservations; the mode requires 41 checks.
+Set `AOE2_WINE_PROFILE=em` to test the executable-memory candidate build
+(`build/wine-em`) instead of the M0 baseline; run directories are named by profile.
+An interactive debugger is disabled for these probes so an unexpected fault
+terminates within the test deadline. See [results](../../docs/executable-memory.md).

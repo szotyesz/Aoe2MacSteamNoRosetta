@@ -1,0 +1,4 @@
+query 0000000061000000 state=0x10000 protect=0x1 base=0000000000000000 size=0x1ede0000
+RWX alloc error=5
+query 0000000061000000 state=0x10000 protect=0x1 base=0000000000000000 size=0x1ede0000
+M0 exec-alloc-state PASS

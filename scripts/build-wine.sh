@@ -4,10 +4,18 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="${AOE2_WORK_ROOT:-$HOME/aoe2-poc-work}"
-SOURCE="$WORK/sources/wine-m0"
-BUILD="$WORK/build/wine-m0"
+# Profiles keep candidate source/build trees separate from the M0 baseline.
+PROFILE="${AOE2_WINE_PROFILE:-m0}"
+case "$PROFILE" in
+    m0) PATCH="$ROOT/patches/wine-m0/0001-native-arm64-macos.patch" ;;
+    em) PATCH="$ROOT/patches/wine-em/0001-native-arm64-macos-exec-memory.patch" ;;
+    *) echo "Unknown AOE2_WINE_PROFILE=$PROFILE (m0 or em)" >&2; exit 2 ;;
+esac
+# Bootstrapping a new candidate may start from an existing combined patch.
+PATCH="${AOE2_WINE_PATCH:-$PATCH}"
+SOURCE="$WORK/sources/wine-$PROFILE"
+BUILD="$WORK/build/wine-$PROFILE"
 BASE=cc893ef9cb17b994bfd1f1a1f7355be55e615623
-PATCH="$ROOT/patches/wine-m0/0001-native-arm64-macos.patch"
 STEP="${1:-all}"
 export SDKROOT="$(xcrun --show-sdk-path)"
 export PATH="$WORK/toolchains/llvm-mingw-20260421-ucrt-macos-universal/bin:/opt/homebrew/opt/bison/bin:/opt/homebrew/bin:$PATH"
@@ -21,7 +29,7 @@ prepare() {
         git -C "$SOURCE" checkout --detach FETCH_HEAD
     fi
     test "$(git -C "$SOURCE" rev-parse HEAD)" = "$BASE" || {
-        echo "Wrong M0 base; refusing to change $SOURCE" >&2; exit 1;
+        echo "Wrong base; refusing to change $SOURCE" >&2; exit 1;
     }
     if [ -z "$(git -C "$SOURCE" status --porcelain)" ]; then
         git -C "$SOURCE" apply --check "$PATCH"
@@ -32,10 +40,10 @@ prepare() {
         actual="$(git -C "$SOURCE" diff --binary --no-ext-diff | shasum -a 256)"
         expected="$(shasum -a 256 < "$PATCH")"
         test "$actual" = "$expected" || {
-            echo "M0 tree contains a different diff; preserve it and inspect manually." >&2; exit 1;
+            echo "$SOURCE contains a different diff; preserve it and inspect manually." >&2; exit 1;
         }
         test -z "$(git -C "$SOURCE" ls-files --others --exclude-standard)" || {
-            echo "M0 tree contains untracked files; refusing to proceed." >&2; exit 1;
+            echo "$SOURCE contains untracked files; refusing to proceed." >&2; exit 1;
         }
         git -C "$SOURCE" apply --reverse --check "$PATCH"
     fi
@@ -44,7 +52,7 @@ configure() {
     # Reconfiguration does not remove disabled outputs from an older build.
     for driver in ndis winebus winebth wineusb mountmgr nsiproxy; do
         if [ -e "$BUILD/dlls/$driver.sys/aarch64-windows/$driver.sys" ]; then
-            echo "Existing driver output in $BUILD; preserve this directory and use a clean M0 build directory." >&2
+            echo "Existing driver output in $BUILD; preserve this directory and use a clean build directory." >&2
             exit 1
         fi
     done
@@ -63,7 +71,7 @@ build() {
     test -f "$BUILD/Makefile" || { echo "Run configure first." >&2; exit 1; }
     # pipefail ensures signing never hides a failed compile/link.
     (cd "$BUILD" && make -j"${AOE2_JOBS:-6}" 2>&1 | tee make.log)
-    "$ROOT/scripts/sign-runtime.sh"
+    AOE2_WINE_PROFILE="$PROFILE" "$ROOT/scripts/sign-runtime.sh"
 }
 case "$STEP" in
     prepare) prepare ;;

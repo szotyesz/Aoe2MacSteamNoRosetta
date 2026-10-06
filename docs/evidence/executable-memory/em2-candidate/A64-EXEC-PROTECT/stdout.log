@@ -1,0 +1,5 @@
+RW->RWX error=5
+query 00000000006F0000 state=0x1000 protect=0x4 base=00000000006F0000 size=0x1000
+RX->RWX error=5
+query 00000000006F0000 state=0x1000 protect=0x20 base=00000000006F0000 size=0x1000
+M0 exec-protect PASS

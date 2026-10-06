@@ -450,15 +450,29 @@ An unresolved upstream API or architectural gap can genuinely block a milestone.
 
 ## 16. Immediate next work package and completion definition
 
-The next implementation turn should perform **P1.1 and P1.2**, not build the entire stack:
+P1's M0 toolchain/source work and native ARM64 console acceptance are implemented.
+The next work package is **executable memory**, before restoring the excluded drivers:
 
-1. Rerun P0-BASE and write the verified tool inventory.
-2. Fetch the pinned Madeira reference and selected Wine/FEX sources outside the repository.
-3. Locate the real ARM64EC emulator and Darwin host build paths; compare the Wine fork with its upstream base.
-4. Produce the source evidence table, identify incompatible iOS dependencies, and propose one executable route in `docs/source-selection.md`.
-5. Continue with P1.3 compiler probes, then P1.4's verified build recipe. Leave unknowns pending rather than generating placeholder patches.
+1. Preserve P0-BASE and the 32 passing M0 console checks.
+2. Run `scripts/test-host-vm.sh` and `scripts/test-m0.py --exec-memory`
+   (41 checks; currently 34 pass). EM-1 is recorded in `docs/executable-memory.md`:
+   the host refuses RWX with EACCES, and Wine reports false success, keeps
+   inconsistent protection metadata and leaks a reservation per failed
+   executable heap.
+3. EM-2 is implemented in the separate `em` profile
+   (`patches/wine-em/`, `AOE2_WINE_PROFILE=em`): failed executable requests now
+   fail cleanly with consistent state and no leak; 39/41 pass, leaving only the
+   positive RWX and executable-heap requirements. The `m0` baseline is unchanged.
+4. Next: use EM-3's standalone host experiments to select the mapping mechanism, then
+   implement EM-4's real protection contract and require all extended probes to pass.
+5. Restore and test the six excluded drivers with fresh-prefix startup free of
+   unhandled faults. Then continue M1's ARM64EC/FEX ABI map and backend selection.
 
-A meaningful first runtime checkpoint is A64-HELLO followed by M0's focused memory/thread/callback/exception tests. The whole POC is complete only after M5's Windows-peer sessions, with repeatable source/build/run instructions and the recorded test evidence. Until then the README must name the highest verified milestone and the actual next unresolved task.
+The native console checkpoint is achieved; executable heaps, FEX and graphics
+remain pending. The whole POC is complete only after M5's Windows-peer sessions,
+with repeatable source/build/run instructions and the recorded test evidence.
+Until then the README must name the highest verified milestone and the actual
+next unresolved task.
 
 ## 17. References and their verification limits
 

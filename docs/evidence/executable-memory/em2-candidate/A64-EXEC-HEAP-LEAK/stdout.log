@@ -1,0 +1,2 @@
+exec heaps created=0/32 private allocations 7->7 bytes 0x51b000->0x51b000
+M0 exec-heap-leak PASS

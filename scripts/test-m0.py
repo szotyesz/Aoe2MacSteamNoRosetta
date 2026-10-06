@@ -11,11 +11,14 @@ import sys
 
 REPO = Path(__file__).resolve().parent.parent
 WORK = Path(os.environ.get("AOE2_WORK_ROOT", Path.home() / "aoe2-poc-work"))
-BUILD = WORK / "build/wine-m0"
+PROFILE = os.environ.get("AOE2_WINE_PROFILE", "m0")
+if PROFILE not in ("m0", "em"):
+    raise SystemExit(f"Unknown AOE2_WINE_PROFILE={PROFILE}")
+BUILD = WORK / ("build/wine-" + PROFILE)
 COMPILER = WORK / "toolchains/llvm-mingw-20260421-ucrt-macos-universal/bin/aarch64-w64-mingw32-clang"
 READOBJ = COMPILER.with_name("llvm-readobj")
 STAMP = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-RUN = WORK / "runs" / ("m0-" + STAMP)
+RUN = WORK / "runs" / (PROFILE + "-" + STAMP)
 RUN.mkdir(parents=True)
 PREFIX = RUN / "prefix"
 ENV = os.environ.copy()
@@ -25,9 +28,30 @@ for key in list(ENV):
 ENV.update(WINEPREFIX=str(PREFIX), WINESERVER=str(BUILD / "server/wineserver"),
            WINEDEBUG="-all", AOE2_M0_DIAGNOSTICS="1")
 RESULTS = []
+EXEC_MEMORY = sys.argv[1:] == ["--exec-memory"]
+if sys.argv[1:] and not EXEC_MEMORY:
+    raise SystemExit("Usage: scripts/test-m0.py [--exec-memory]")
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def stop_retained_children(env):
+    """Darwin spawn wrappers can leave our process group; scope by exact prefix."""
+    prefix = env.get("WINEPREFIX", "")
+    if not prefix.startswith(str(RUN) + os.sep):
+        return
+    listing = subprocess.check_output(["ps", "eww", "-axo", "pid=,command="], text=True)
+    for row in listing.splitlines():
+        fields = row.strip().split(None, 1)
+        if len(fields) != 2:
+            continue
+        pid, description = fields
+        if (description.startswith(str(BUILD / "loader/wine") + " ") and
+                f"WINEPREFIX={prefix} " in description + " "):
+            try:
+                os.kill(int(pid), signal.SIGKILL)
+            except ProcessLookupError:
+                pass
 
 def command(args, env=None, cwd=None, timeout=30):
     proc = subprocess.Popen([str(a) for a in args], env=env, cwd=cwd,
@@ -45,9 +69,21 @@ def command(args, env=None, cwd=None, timeout=30):
             if proc.poll() is None:
                 proc.kill()
         if env and env.get("WINEPREFIX", "").startswith(str(RUN) + os.sep):
-            subprocess.run([str(BUILD / "server/wineserver"), "-k"], env=env,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
-        out, err = proc.communicate(timeout=10)
+            try:
+                subprocess.run([str(BUILD / "server/wineserver"), "-k"], env=env,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+            except subprocess.TimeoutExpired:
+                pass  # Preserve the original timed-out case; cleanup is checked separately.
+            stop_retained_children(env)
+        try:
+            out, err = proc.communicate(timeout=10)
+        except subprocess.TimeoutExpired as exc:
+            # Spawned Wine children can escape the launcher's process group.
+            # Retained pipes must not erase the failed case or stop later probes.
+            out, err = exc.output or b"", exc.stderr or b""
+            proc.stdout.close()
+            proc.stderr.close()
+            proc.poll()
         return proc.returncode, out.decode(errors="replace"), err.decode(errors="replace"), True
 
 def case(test_id, binary, args, expected_code=0, expected_line=None, timeout=30, env=None, expected_fault=None):
@@ -89,6 +125,15 @@ try:
     if case("A64-HELLO", RUN / "hello.exe", [], 23, "A64-HELLO OK", 120):
         for name in ["memory", "shared", "threads", "callback", "exceptions", "io"]:
             case({"memory":"A64-MEM", "threads":"A64-THREAD", "exceptions":"A64-SEH"}.get(name, "A64-" + name.upper()), RUN / "runtime.exe", [name], expected_line="M0 " + name + " PASS")
+        if EXEC_MEMORY:
+            executable_env = ENV.copy()
+            executable_env["WINEDLLOVERRIDES"] = "winedbg.exe=d"
+            # Positive requirements, then EM-1 state/consistency cases.
+            for name in ["exec-heap", "exec-rwx", "exec-transition",
+                         "exec-commit", "exec-protect", "exec-alloc-state",
+                         "exec-rollback", "exec-protect-span", "exec-heap-leak"]:
+                case("A64-" + name.upper(), RUN / "runtime.exe", [name],
+                     expected_line="M0 " + name + " PASS", env=executable_env)
         unhandled = ENV.copy()
         # The negative fixture must terminate, rather than launch an interactive debugger.
         unhandled["WINEDLLOVERRIDES"] = "winedbg.exe=d"
@@ -125,11 +170,12 @@ finally:
             (RUN / (prefix.name + "-cleanup.log")).write_text(
                 f"kill_exit={code} kill_timeout={expired}\n{out}{err}"
                 f"wait_exit={wait_code} wait_timeout={wait_expired}\n{wait_out}{wait_err}")
+            stop_retained_children(cleanup)
             RESULTS.append(dict(test_id="SERVER-CLEANUP-" + prefix.name,
                                 passed=kill_ok and not wait_expired and wait_code == 0,
                                 kill_exit=code, wait_exit=wait_code, timeout=expired or wait_expired))
-    source = WORK / "sources/wine-m0"
-    report = dict(utc=STAMP, host=subprocess.check_output(["sw_vers"], text=True),
+    source = WORK / ("sources/wine-" + PROFILE)
+    report = dict(utc=STAMP, profile=PROFILE, host=subprocess.check_output(["sw_vers"], text=True),
                   architecture=subprocess.check_output(["uname", "-m"], text=True).strip(),
                   sdk=subprocess.check_output(["xcrun", "--show-sdk-version"], text=True).strip(),
                   compiler=subprocess.check_output([str(COMPILER), "--version"], text=True),
@@ -142,5 +188,5 @@ finally:
                   results=RESULTS)
     (RUN / "results.json").write_text(json.dumps(report, indent=2) + "\n")
     print("Evidence:", RUN, flush=True)
-if len(RESULTS) != 32 or not all(r["passed"] for r in RESULTS):
+if len(RESULTS) != (41 if EXEC_MEMORY else 32) or not all(r["passed"] for r in RESULTS):
     sys.exit(1)

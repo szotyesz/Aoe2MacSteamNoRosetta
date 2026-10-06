@@ -1,0 +1,185 @@
+Host: macOS 26.6.2 (25G83)
+SDK: 27.0
+$TMPDIR/aoe2-host-vm.*/host-vm-probe: replacing existing signature
+36a8eb252f24742462551eb31dced9e8210f210a75c1955b2df778765fbeaaf3  tests/exec-memory/host-vm-probe.c
+--- matrix page=4k
+matrix pagesize=4096 mach=4096
+case=A-mmap-rwx op=mmap(RWX) size=0x1000 ok=0 errno=13(Permission denied)
+case=B-rw-to-rwx op=mmap(RW) size=0x1000 ok=1 errno=0(none)
+case=B-rw-to-rwx op=region-after-mmap size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x1000
+case=B-rw-to-rwx op=mprotect(RW->RWX) size=0x1000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mmap(RW) size=0x1000 ok=1 errno=0(none)
+case=C-ladder op=mprotect(RW->RX) size=0x1000 ok=1 errno=0(none)
+case=C-ladder op=region-after-rx size=0x0 ok=1 errno=0(none) region prot=5 max=7 size=0x1000
+case=C-ladder op=exec-rx size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=C-ladder op=mprotect(RX->RW) size=0x1000 ok=1 errno=0(none)
+case=C-ladder op=mprotect(RW->RWX) size=0x1000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mprotect(RW->RX) size=0x1000 ok=1 errno=0(none)
+case=C-ladder op=exec-rx2 size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=C-ladder op=mprotect(RX->RWX) size=0x1000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mprotect(RX->RW) size=0x1000 ok=1 errno=0(none)
+case=D-16k-ladder op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=region-after-rx size=0x0 ok=1 errno=0(none) region prot=5 max=7 size=0x4000
+case=D-16k-ladder op=exec-rx size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=D-16k-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=mprotect(RW->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=D-16k-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=exec-rx2 size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=D-16k-ladder op=mprotect(RX->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=D-16k-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=E-4k-inner op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=E-4k-inner op=mprotect(RW->RX) size=0x1000 ok=1 errno=0(none)
+case=E-4k-inner op=region-inner size=0x0 ok=1 errno=0(none) region prot=5 max=7 size=0x1000
+case=E-4k-inner op=region-before-inner size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x1000
+case=E-4k-inner op=exec-inner size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=E-4k-inner op=mprotect(RX->RWX) size=0x1000 ok=0 errno=13(Permission denied)
+case=E-4k-inner op=write-neighbour size=0x1000 ok=1 errno=0(none)
+matrix failures=0
+RESULT matrix page=4k PASS exit=0
+--- matrix-tso page=4k
+matrix pagesize=4096 mach=4096
+tso enable kr=0
+case=A-mmap-rwx op=mmap(RWX) size=0x1000 ok=0 errno=13(Permission denied)
+case=B-rw-to-rwx op=mmap(RW) size=0x1000 ok=1 errno=0(none)
+case=B-rw-to-rwx op=region-after-mmap size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x1000
+case=B-rw-to-rwx op=mprotect(RW->RWX) size=0x1000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mmap(RW) size=0x1000 ok=1 errno=0(none)
+case=C-ladder op=mprotect(RW->RX) size=0x1000 ok=1 errno=0(none)
+case=C-ladder op=region-after-rx size=0x0 ok=1 errno=0(none) region prot=5 max=7 size=0x1000
+case=C-ladder op=exec-rx size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=C-ladder op=mprotect(RX->RW) size=0x1000 ok=1 errno=0(none)
+case=C-ladder op=mprotect(RW->RWX) size=0x1000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mprotect(RW->RX) size=0x1000 ok=1 errno=0(none)
+case=C-ladder op=exec-rx2 size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=C-ladder op=mprotect(RX->RWX) size=0x1000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mprotect(RX->RW) size=0x1000 ok=1 errno=0(none)
+case=D-16k-ladder op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=region-after-rx size=0x0 ok=1 errno=0(none) region prot=5 max=7 size=0x4000
+case=D-16k-ladder op=exec-rx size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=D-16k-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=mprotect(RW->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=D-16k-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=exec-rx2 size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=D-16k-ladder op=mprotect(RX->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=D-16k-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=E-4k-inner op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=E-4k-inner op=mprotect(RW->RX) size=0x1000 ok=1 errno=0(none)
+case=E-4k-inner op=region-inner size=0x0 ok=1 errno=0(none) region prot=5 max=7 size=0x1000
+case=E-4k-inner op=region-before-inner size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x1000
+case=E-4k-inner op=exec-inner size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=E-4k-inner op=mprotect(RX->RWX) size=0x1000 ok=0 errno=13(Permission denied)
+case=E-4k-inner op=write-neighbour size=0x1000 ok=1 errno=0(none)
+matrix failures=0
+RESULT matrix-tso page=4k PASS exit=0
+--- write-ro page=4k
+case=W-ro op=mmap(RW) size=0x1000 ok=1 errno=0(none)
+case=W-ro op=mprotect(RW->RO) size=0x1000 ok=1 errno=0(none)
+RESULT write-ro page=4k PASS signal=10
+--- cycle-ro page=4k
+case=W-cycle-ro op=mmap(RW) size=0x1000 ok=1 errno=0(none)
+case=W-cycle-ro op=mprotect(RW->RO) size=0x1000 ok=1 errno=0(none)
+case=W-cycle-ro op=mprotect(RO->RW) size=0x1000 ok=1 errno=0(none)
+case=W-cycle-ro op=region-after-rw size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x1000
+case=W-cycle-ro op=write size=0x1000 ok=1 errno=0(none)
+RESULT cycle-ro page=4k PASS exit=0
+--- cycle-rx page=4k
+case=W-cycle-rx op=mmap(RW) size=0x1000 ok=1 errno=0(none)
+case=W-cycle-rx op=mprotect(RW->RX) size=0x1000 ok=1 errno=0(none)
+case=W-cycle-rx op=mprotect(RX->RW) size=0x1000 ok=1 errno=0(none)
+case=W-cycle-rx op=region-after-rw size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x1000
+case=W-cycle-rx op=write size=0x1000 ok=1 errno=0(none)
+RESULT cycle-rx page=4k PASS exit=0
+--- cycle-exec page=4k
+case=W-cycle-exec op=mmap(RW) size=0x1000 ok=1 errno=0(none)
+case=W-cycle-exec op=mprotect(RW->RX) size=0x1000 ok=1 errno=0(none)
+case=W-cycle-exec op=exec size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=W-cycle-exec op=mprotect(RX->RW) size=0x1000 ok=1 errno=0(none)
+case=W-cycle-exec op=region-after-rw size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x1000
+case=W-cycle-exec op=write size=0x1000 ok=1 errno=0(none)
+RESULT cycle-exec page=4k PASS exit=0
+--- matrix page=default
+matrix pagesize=16384 mach=16384
+case=A-mmap-rwx op=mmap(RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=B-rw-to-rwx op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=B-rw-to-rwx op=region-after-mmap size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x4000
+case=B-rw-to-rwx op=mprotect(RW->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=C-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=C-ladder op=region-after-rx size=0x0 ok=1 errno=0(none) region prot=5 max=7 size=0x4000
+case=C-ladder op=exec-rx size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=C-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=C-ladder op=mprotect(RW->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=C-ladder op=exec-rx2 size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=C-ladder op=mprotect(RX->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=region-after-rx size=0x0 ok=1 errno=0(none) region prot=5 max=7 size=0x4000
+case=D-16k-ladder op=exec-rx size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=D-16k-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=mprotect(RW->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=D-16k-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=exec-rx2 size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=D-16k-ladder op=mprotect(RX->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=D-16k-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+matrix failures=0
+RESULT matrix page=default PASS exit=0
+--- matrix-tso page=default
+matrix pagesize=16384 mach=16384
+tso enable kr=0
+case=A-mmap-rwx op=mmap(RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=B-rw-to-rwx op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=B-rw-to-rwx op=region-after-mmap size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x4000
+case=B-rw-to-rwx op=mprotect(RW->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=C-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=C-ladder op=region-after-rx size=0x0 ok=1 errno=0(none) region prot=5 max=7 size=0x4000
+case=C-ladder op=exec-rx size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=C-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=C-ladder op=mprotect(RW->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=C-ladder op=exec-rx2 size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=C-ladder op=mprotect(RX->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=C-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=region-after-rx size=0x0 ok=1 errno=0(none) region prot=5 max=7 size=0x4000
+case=D-16k-ladder op=exec-rx size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=D-16k-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=mprotect(RW->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=D-16k-ladder op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=D-16k-ladder op=exec-rx2 size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=D-16k-ladder op=mprotect(RX->RWX) size=0x4000 ok=0 errno=13(Permission denied)
+case=D-16k-ladder op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+matrix failures=0
+RESULT matrix-tso page=default PASS exit=0
+--- write-ro page=default
+case=W-ro op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=W-ro op=mprotect(RW->RO) size=0x4000 ok=1 errno=0(none)
+RESULT write-ro page=default PASS signal=10
+--- cycle-ro page=default
+case=W-cycle-ro op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=W-cycle-ro op=mprotect(RW->RO) size=0x4000 ok=1 errno=0(none)
+case=W-cycle-ro op=mprotect(RO->RW) size=0x4000 ok=1 errno=0(none)
+case=W-cycle-ro op=region-after-rw size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x4000
+case=W-cycle-ro op=write size=0x4000 ok=1 errno=0(none)
+RESULT cycle-ro page=default PASS exit=0
+--- cycle-rx page=default
+case=W-cycle-rx op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=W-cycle-rx op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=W-cycle-rx op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=W-cycle-rx op=region-after-rw size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x4000
+case=W-cycle-rx op=write size=0x4000 ok=1 errno=0(none)
+RESULT cycle-rx page=default PASS exit=0
+--- cycle-exec page=default
+case=W-cycle-exec op=mmap(RW) size=0x4000 ok=1 errno=0(none)
+case=W-cycle-exec op=mprotect(RW->RX) size=0x4000 ok=1 errno=0(none)
+case=W-cycle-exec op=exec size=0x0 ok=1 errno=0(none) exec=42 want=42
+case=W-cycle-exec op=mprotect(RX->RW) size=0x4000 ok=1 errno=0(none)
+case=W-cycle-exec op=region-after-rw size=0x0 ok=1 errno=0(none) region prot=3 max=7 size=0x4000
+case=W-cycle-exec op=write size=0x4000 ok=1 errno=0(none)
+RESULT cycle-exec page=default PASS exit=0
+host-vm-probe failures=0

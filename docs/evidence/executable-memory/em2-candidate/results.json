@@ -1,0 +1,775 @@
+{
+  "utc": "20261006T163904285452Z",
+  "profile": "em",
+  "host": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n",
+  "architecture": "arm64",
+  "sdk": "27.0",
+  "compiler": "clang version 22.1.4 (https://github.com/llvm/llvm-project.git 35990504507d79e0b9deb809c8ee5e1b34ceef20)\nTarget: aarch64-w64-windows-gnu\nThread model: posix\nInstalledDir: $HOME/aoe2-poc-work/toolchains/llvm-mingw-20260421-ucrt-macos-universal/bin\nConfiguration file: $HOME/aoe2-poc-work/toolchains/llvm-mingw-20260421-ucrt-macos-universal/bin/aarch64-w64-windows-gnu.cfg\n",
+  "probe_flags": [
+    "-O1",
+    "-g",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-fms-extensions",
+    "-Xclang",
+    "-fasync-exceptions"
+  ],
+  "source_lock_sha256": "16485311bec44fac2f20a82e72a0ceaed9c4e1f9d6c545bb5dbbd897a00e6a7e",
+  "source_commit": "cc893ef9cb17b994bfd1f1a1f7355be55e615623",
+  "source_diff_sha256": "424eb2d97d9598d3eb84f96f327cfbccee6baafdb0e22734e7b152b5cd8b12be",
+  "artifacts": {
+    "$HOME/aoe2-poc-work/build/wine-em/loader/wine": "c5db57ec2b5da0778843fba525fb4fec2a49b618562c0470fbb63511f48f0872",
+    "$HOME/aoe2-poc-work/build/wine-em/server/wineserver": "facd80786cf0c24675b03d5432ee83945a64b17322ec1c05cb5d8bd22a66ca81",
+    "$HOME/aoe2-poc-work/build/wine-em/dlls/ntdll/ntdll.so": "f404160f0ba3adab49c32b1bac47854dd116ac36425fad160186df5ad4f26c0d",
+    "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe": "b45c45fdc5bfd4704112dad5928ecfd64b803e10bd2d793ded24461303fbdb18",
+    "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe": "ab9f9e8bfb3c751031189a3898fc9102f06d646c2d0d497bc20933720e9b66e7"
+  },
+  "environment": {
+    "WINEPREFIX": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+    "WINESERVER": "$HOME/aoe2-poc-work/build/wine-em/server/wineserver",
+    "WINEDEBUG": "-all",
+    "AOE2_M0_DIAGNOSTICS": "1"
+  },
+  "results": [
+    {
+      "test_id": "A64-HELLO",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-HELLO",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:39:04.665032+00:00",
+      "seconds": 6.797009
+    },
+    {
+      "test_id": "A64-MEM",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "memory"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-MEM",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 memory PASS",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:39:11.462140+00:00",
+      "seconds": 3.307942
+    },
+    {
+      "test_id": "A64-SHARED",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "shared"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-SHARED",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 shared PASS",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:39:14.770256+00:00",
+      "seconds": 3.380145
+    },
+    {
+      "test_id": "A64-THREAD",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "threads"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-THREAD",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 threads PASS",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:39:18.150495+00:00",
+      "seconds": 3.337997
+    },
+    {
+      "test_id": "A64-CALLBACK",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "callback"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-CALLBACK",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 callback PASS",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:39:21.488596+00:00",
+      "seconds": 3.298144
+    },
+    {
+      "test_id": "A64-SEH",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "exceptions"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-SEH",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 exceptions PASS",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:39:24.786830+00:00",
+      "seconds": 3.294212
+    },
+    {
+      "test_id": "A64-IO",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "io"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-IO",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 io PASS",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:39:28.081181+00:00",
+      "seconds": 3.290736
+    },
+    {
+      "test_id": "A64-EXEC-HEAP",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "exec-heap"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-EXEC-HEAP",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 1,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 exec-heap PASS",
+      "expected_fault": null,
+      "environment_overrides": {
+        "WINEDLLOVERRIDES": "winedbg.exe=d"
+      },
+      "passed": false,
+      "utc": "2026-10-06T16:39:31.372008+00:00",
+      "seconds": 3.298086
+    },
+    {
+      "test_id": "A64-EXEC-RWX",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "exec-rwx"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-EXEC-RWX",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 1,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 exec-rwx PASS",
+      "expected_fault": null,
+      "environment_overrides": {
+        "WINEDLLOVERRIDES": "winedbg.exe=d"
+      },
+      "passed": false,
+      "utc": "2026-10-06T16:39:34.670265+00:00",
+      "seconds": 3.304154
+    },
+    {
+      "test_id": "A64-EXEC-TRANSITION",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "exec-transition"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-EXEC-TRANSITION",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 exec-transition PASS",
+      "expected_fault": null,
+      "environment_overrides": {
+        "WINEDLLOVERRIDES": "winedbg.exe=d"
+      },
+      "passed": true,
+      "utc": "2026-10-06T16:39:37.974575+00:00",
+      "seconds": 3.290175
+    },
+    {
+      "test_id": "A64-EXEC-COMMIT",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "exec-commit"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-EXEC-COMMIT",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 exec-commit PASS",
+      "expected_fault": null,
+      "environment_overrides": {
+        "WINEDLLOVERRIDES": "winedbg.exe=d"
+      },
+      "passed": true,
+      "utc": "2026-10-06T16:39:41.264834+00:00",
+      "seconds": 3.293357
+    },
+    {
+      "test_id": "A64-EXEC-PROTECT",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "exec-protect"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-EXEC-PROTECT",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 exec-protect PASS",
+      "expected_fault": null,
+      "environment_overrides": {
+        "WINEDLLOVERRIDES": "winedbg.exe=d"
+      },
+      "passed": true,
+      "utc": "2026-10-06T16:39:44.558344+00:00",
+      "seconds": 3.292109
+    },
+    {
+      "test_id": "A64-EXEC-ALLOC-STATE",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "exec-alloc-state"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-EXEC-ALLOC-STATE",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 exec-alloc-state PASS",
+      "expected_fault": null,
+      "environment_overrides": {
+        "WINEDLLOVERRIDES": "winedbg.exe=d"
+      },
+      "passed": true,
+      "utc": "2026-10-06T16:39:47.850556+00:00",
+      "seconds": 3.301561
+    },
+    {
+      "test_id": "A64-EXEC-ROLLBACK",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "exec-rollback"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-EXEC-ROLLBACK",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 exec-rollback PASS",
+      "expected_fault": null,
+      "environment_overrides": {
+        "WINEDLLOVERRIDES": "winedbg.exe=d"
+      },
+      "passed": true,
+      "utc": "2026-10-06T16:39:51.152264+00:00",
+      "seconds": 3.302407
+    },
+    {
+      "test_id": "A64-EXEC-PROTECT-SPAN",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "exec-protect-span"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-EXEC-PROTECT-SPAN",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 exec-protect-span PASS",
+      "expected_fault": null,
+      "environment_overrides": {
+        "WINEDLLOVERRIDES": "winedbg.exe=d"
+      },
+      "passed": true,
+      "utc": "2026-10-06T16:39:54.454775+00:00",
+      "seconds": 3.305142
+    },
+    {
+      "test_id": "A64-EXEC-HEAP-LEAK",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "exec-heap-leak"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-EXEC-HEAP-LEAK",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 0,
+      "timeout": false,
+      "expected_exit": 0,
+      "expected_line": "M0 exec-heap-leak PASS",
+      "expected_fault": null,
+      "environment_overrides": {
+        "WINEDLLOVERRIDES": "winedbg.exe=d"
+      },
+      "passed": true,
+      "utc": "2026-10-06T16:39:57.760068+00:00",
+      "seconds": 3.297589
+    },
+    {
+      "test_id": "A64-SEH-UNHANDLED",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/runtime.exe",
+        "unhandled"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-SEH-UNHANDLED",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 5,
+      "timeout": false,
+      "expected_exit": 5,
+      "expected_line": null,
+      "expected_fault": "Unhandled page fault on write access to 0000000000001234",
+      "environment_overrides": {
+        "WINEDLLOVERRIDES": "winedbg.exe=d"
+      },
+      "passed": true,
+      "utc": "2026-10-06T16:40:01.057777+00:00",
+      "seconds": 3.303135
+    },
+    {
+      "test_id": "A64-REPEAT-01",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-01",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:04.361022+00:00",
+      "seconds": 3.299525
+    },
+    {
+      "test_id": "A64-REPEAT-02",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-02",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:07.660698+00:00",
+      "seconds": 3.297155
+    },
+    {
+      "test_id": "A64-REPEAT-03",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-03",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:10.957985+00:00",
+      "seconds": 3.297889
+    },
+    {
+      "test_id": "A64-REPEAT-04",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-04",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:14.255988+00:00",
+      "seconds": 3.285436
+    },
+    {
+      "test_id": "A64-REPEAT-05",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-05",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:17.541536+00:00",
+      "seconds": 3.285724
+    },
+    {
+      "test_id": "A64-REPEAT-06",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-06",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:20.827413+00:00",
+      "seconds": 3.292775
+    },
+    {
+      "test_id": "A64-REPEAT-07",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-07",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:24.120334+00:00",
+      "seconds": 3.296565
+    },
+    {
+      "test_id": "A64-REPEAT-08",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-08",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:27.416997+00:00",
+      "seconds": 3.28347
+    },
+    {
+      "test_id": "A64-REPEAT-09",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-09",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:30.700561+00:00",
+      "seconds": 3.283801
+    },
+    {
+      "test_id": "A64-REPEAT-10",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-10",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:33.984502+00:00",
+      "seconds": 3.285917
+    },
+    {
+      "test_id": "A64-REPEAT-11",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-11",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:37.270578+00:00",
+      "seconds": 3.287681
+    },
+    {
+      "test_id": "A64-REPEAT-12",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-12",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:40.558374+00:00",
+      "seconds": 3.279308
+    },
+    {
+      "test_id": "A64-REPEAT-13",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-13",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:43.837786+00:00",
+      "seconds": 3.280682
+    },
+    {
+      "test_id": "A64-REPEAT-14",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-14",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:47.118597+00:00",
+      "seconds": 3.283168
+    },
+    {
+      "test_id": "A64-REPEAT-15",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-15",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:50.401857+00:00",
+      "seconds": 3.279182
+    },
+    {
+      "test_id": "A64-REPEAT-16",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-16",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:53.681139+00:00",
+      "seconds": 3.281806
+    },
+    {
+      "test_id": "A64-REPEAT-17",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-17",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:40:56.963038+00:00",
+      "seconds": 3.288393
+    },
+    {
+      "test_id": "A64-REPEAT-18",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-18",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:41:00.251550+00:00",
+      "seconds": 3.293159
+    },
+    {
+      "test_id": "A64-REPEAT-19",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-19",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:41:03.544871+00:00",
+      "seconds": 3.284996
+    },
+    {
+      "test_id": "A64-REPEAT-20",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-REPEAT-20",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:41:06.829975+00:00",
+      "seconds": 3.296833
+    },
+    {
+      "test_id": "A64-FRESH",
+      "command": [
+        "$HOME/aoe2-poc-work/build/wine-em/loader/wine",
+        "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/hello.exe"
+      ],
+      "cwd": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/A64-FRESH",
+      "prefix": "$HOME/aoe2-poc-work/runs/em-20261006T163904285452Z/fresh-prefix",
+      "exit_code": 23,
+      "timeout": false,
+      "expected_exit": 23,
+      "expected_line": "A64-HELLO OK",
+      "expected_fault": null,
+      "environment_overrides": {},
+      "passed": true,
+      "utc": "2026-10-06T16:41:10.126918+00:00",
+      "seconds": 6.652403
+    },
+    {
+      "test_id": "HOST-NATIVE",
+      "passed": true,
+      "expected": "native Wine boundary reports 4096/false/not translated"
+    },
+    {
+      "test_id": "SERVER-CLEANUP-prefix",
+      "passed": true,
+      "kill_exit": 1,
+      "wait_exit": 0,
+      "timeout": false
+    },
+    {
+      "test_id": "SERVER-CLEANUP-fresh-prefix",
+      "passed": true,
+      "kill_exit": 1,
+      "wait_exit": 0,
+      "timeout": false
+    }
+  ]
+}

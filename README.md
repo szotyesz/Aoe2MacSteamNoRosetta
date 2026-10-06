@@ -55,6 +55,15 @@ Apple entitlement access remains a parallel inquiry, not a local POC blocker.
 
 Next: implement and test executable memory, restore/test the excluded drivers,
 and complete the M1 ARM64EC/FEX ABI audit before translated application tests.
+The [executable-memory probes](docs/executable-memory.md) now distinguish passing
+RW/RX transitions from failing executable heaps and RWX execution. EM-1 found
+that the host refuses RWX with EACCES and that Wine then reports false success,
+keeps inconsistent protection metadata and leaks a reservation per failed
+executable heap. The EM-2 candidate profile fixes those failure paths
+(`AOE2_WINE_PROFILE=em`, [patch](patches/wine-em/README.md)): 39/41 checks pass,
+leaving only real RWX/executable-heap support. Run `./scripts/test-host-vm.sh`
+and `AOE2_WINE_PROFILE=em ./scripts/test-m0.py --exec-memory`; EM-3 (choosing a
+host mapping mechanism) is next.
 See [M0 results and preserved evidence](docs/m0-results.md),
 [the detailed plan](aoe2de-no-rosetta-plan.md),
 [milestone status](docs/milestones.md), and

@@ -1,0 +1,1 @@
+FAIL /Users/szotyesz/Aoe2MacSteamNoRosetta/tests/m0/runtime.c:277: regions1 == regions0 && bytes1 == bytes0 (error=87)

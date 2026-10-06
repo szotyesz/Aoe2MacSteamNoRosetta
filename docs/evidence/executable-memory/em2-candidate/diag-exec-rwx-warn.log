@@ -1,0 +1,2 @@
+011c:warn:virtual:mprotect_range mprotect 0x60000000-0x60000fff unix prot 0x7 failed: Permission denied
+FAIL $HOME/Aoe2MacSteamNoRosetta/tests/m0/runtime.c:100: p (error=5)

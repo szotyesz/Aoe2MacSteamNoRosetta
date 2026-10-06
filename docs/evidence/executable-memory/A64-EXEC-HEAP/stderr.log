@@ -1,0 +1,76 @@
+M0-VM preload=0x104da3000 first=0x10000 size=ffff0000
+M0-VM preload=0x102b10000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11175 teb=0x7ffc0000
+M0-VM preload=0x102c0d000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11180 teb=0x7ffc0000
+M0-VM preload=0x1045d0000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ffb0000
+M0-VM preload=0x10411c000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11195 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ff90000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11195 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11195 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11195 teb=0x7ff90000
+M0-THREAD TSO=enabled teb=0x7ff80000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ff80000
+M0-THREAD TSO=enabled teb=0x7ff70000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ff70000
+M0-VM preload=0x1026c3000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11198 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff60000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ff60000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11198 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11198 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11198 teb=0x7ff90000
+M0-VM preload=0x100b9f000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11201 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff50000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ff50000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11201 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11201 teb=0x7ffa0000
+M0-VM preload=0x104c89000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11204 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ff40000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ff40000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11204 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11204 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11204 teb=0x7ff90000
+M0-VM preload=0x100ffb000 first=0x10000 size=ffff0000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11207 teb=0x7ffc0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ffb0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11207 teb=0x7ffb0000
+M0-THREAD TSO=enabled teb=0x7ffa0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11207 teb=0x7ffa0000
+M0-THREAD TSO=enabled teb=0x7ff90000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11207 teb=0x7ff90000
+M0-THREAD TSO=enabled teb=0x7ff30000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11192 teb=0x7ff30000
+M0-THREAD TSO=enabled teb=0x7ffc0000
+M0-NATIVE pages=4096 custom_x18=0 translated=0 pid=11162 teb=0x7ffc0000
+FAIL /Users/szotyesz/Aoe2MacSteamNoRosetta/tests/m0/runtime.c:90: heap (error=8)
