@@ -53,17 +53,15 @@ this host and their unchecked heap use crashes startup. Device support, those
 network/drive-management services, FEX, DXMT, Steam and AoE2DE are not validated.
 Apple entitlement access remains a parallel inquiry, not a local POC blocker.
 
-Next: implement and test executable memory, restore/test the excluded drivers,
-and complete the M1 ARM64EC/FEX ABI audit before translated application tests.
-The [executable-memory probes](docs/executable-memory.md) now distinguish passing
-RW/RX transitions from failing executable heaps and RWX execution. EM-1 found
-that the host refuses RWX with EACCES and that Wine then reports false success,
-keeps inconsistent protection metadata and leaks a reservation per failed
-executable heap. The EM-2 candidate profile fixes those failure paths
-(`AOE2_WINE_PROFILE=em`, [patch](patches/wine-em/README.md)): 39/41 checks pass,
-leaving only real RWX/executable-heap support. Run `./scripts/test-host-vm.sh`
-and `AOE2_WINE_PROFILE=em ./scripts/test-m0.py --exec-memory`; EM-3 (choosing a
-host mapping mechanism) is next.
+Next (route revision R1, see [route review](docs/route-review.md)): re-port the
+M0 and EM patches from Wine 11.4 to the upstream wine-11.19 tag, fixing an x18
+signal race and other defects found in review; then make the ntoskrnl heap
+non-executable to restore the six drivers, and run the EM-3 host experiments.
+Native simultaneous writable+executable memory is no longer a goal: macOS
+refuses it for non-JIT memory, so executable memory is split by consumer (plan
+section M0-EM). FEX and DXMT move to upstream pins; Madeira is a reference only.
+The [executable-memory probes](docs/executable-memory.md) record EM-1 (host RWX
+refused with EACCES) and EM-2 (`AOE2_WINE_PROFILE=em`, 39/41 checks).
 See [M0 results and preserved evidence](docs/m0-results.md),
 [the detailed plan](aoe2de-no-rosetta-plan.md),
 [milestone status](docs/milestones.md), and

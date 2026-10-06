@@ -1,6 +1,17 @@
 # AoE2DE on Apple Silicon without Rosetta — implementation plan for a local POC
 
-Updated: 2026-10-06. P0 passes; native ARM64 console M0 acceptance passes (32/32 checks). See `docs/m0-results.md` for execution evidence and limitations. The platform baseline commit remains `bfac0ac`.
+Updated: 2026-10-06 (route revision R1). P0 passes; native ARM64 console M0 acceptance passes (32/32 checks) on the Wine 11.4 base. See `docs/m0-results.md` for execution evidence and limitations. The platform baseline commit remains `bfac0ac`.
+
+**Route revision R1 (2026-10-06).** The route review in `docs/route-review.md` confirmed the architecture (native ARM64 Wine, ARM64EC + FEX for x86-64, FEX WoW64 for i386, DXMT for D3D11) and changed the sources and ordering:
+
+- Wine base moves from 11.4 (`cc893ef9cb17`) to the upstream **wine-11.19** tag, commit `455e3509b98a6919fd4ad1def4803e08c41c03b2`, fetched from upstream rather than Madeira's fork. The M0 and EM patches are re-ported by hand (M0.0).
+- FEX moves to **upstream FEX main at or after `f18599d09`** (for example `7d3090f78237`), not FEX-2609.1 and not Madeira's fork. DXMT moves to **upstream 3Shain/dxmt main at or after `e94c312`**.
+- Madeira becomes a narrow reference only (section 3). MacNeutron, Highball's arm64 line and CrossOver's ARM64 preview are added as comparison references.
+- Native simultaneous writable+executable host memory is dropped as a goal. Executable memory follows the consumer split in M0-EM, and EM-2's fail-on-RWX policy does not carry into M1.
+- i386/WoW64 becomes its own milestone (M1.6), before Steam.
+- A signing-profile milestone (S1) and Wine test-suite lanes are added.
+
+Items marked [unverified] in this plan come from secondary reports and must be checked before relying on them.
 
 ## 1. Objective, scope, and known facts
 
@@ -16,9 +27,11 @@ The working environment is the user's temporary SIP/AMFI-disabled macOS installa
 | AMFI configuration | `kern.bootargs` includes `amfi_get_out_of_my_way=0x1` | Recorded configuration, not an exhaustive audit |
 | Platform facilities | `scripts/test-platform.sh` passes | 4 KiB spawning, low mapping, x18 mode, TSO API acceptance |
 | Signature | Ad-hoc with unmanaged cross-architecture entitlement | Works locally; no account authorization established |
-| Wine runtime | Native ARM64 console M0 build implemented | Console acceptance is tracked in `docs/m0-results.md`; executable heaps/device drivers remain unsupported |
-| FEX/DXMT | Source references and recipes only | M1–M5 remain pending |
+| Wine runtime | Native ARM64 console M0 build implemented on Wine 11.4 | Console acceptance is tracked in `docs/m0-results.md`; executable heaps/device drivers remain unsupported; re-port to wine-11.19 pending |
+| FEX/DXMT | Source references and recipes only; recipes still target Madeira forks | M1–M5 remain pending; recipes must be rewritten for upstream pins |
 | macOS 26.5 | Probe deployment target only | Execution on 26.5 has not been verified |
+| macOS 27 | Not tested | Both public comparison projects measure on 27; add it to the test matrix when available |
+| Rosetta | Apple's macOS 27 release notes say Intel software stops working on macOS 28, except legacy games | Every Rosetta-based Wine stack loses general support after macOS 27; this route does not depend on it |
 
 This POC does not require a launcher UI. A command-line harness, separate Wine server, separate client processes, local prefix, and captured logs are sufficient. Keep the game and Steam files outside tracked source. Do not change the host's security configuration or substitute Rosetta to get a milestone to pass.
 
@@ -41,13 +54,48 @@ Prefer separate Mach tasks for separate Windows processes. The low-address and 4
 
 No-Rosetta evidence must cover runtime processes and the build tools used for the POC. A universal executable is acceptable when it actually runs its ARM64 slice. An x86-64 Windows PE translated by FEX is expected. An x86-64 Mach-O translated by Rosetta fails the requirement.
 
-## 3. Madeira: what to reuse and what to avoid inheriting
+## 3. Reference projects: Madeira and others
 
-### 3.1 Assessment
+### 3.0 Selected sources (R1)
 
-[Madeira](https://github.com/willfaust/Madeira) is a credible integration reference because it combines native ARM64EC Wine with FEX, DXMT, and WoW64. Its target is iOS and its Windows processes share one host process. That process model should not become the starting point for this macOS POC. This is a design recommendation, not evidence that adapting any particular fork already works.
+| Component | Selected source | Notes |
+|---|---|---|
+| Wine | Upstream `https://gitlab.winehq.org/wine/wine.git` (mirror `https://github.com/wine-mirror/wine`), tag `wine-11.19`, commit `455e3509b98a6919fd4ad1def4803e08c41c03b2` | Pin a tag, not master. Rebase deliberately every 2–4 development releases and re-run P0, M0, EM and later gates each time. Upstream CI builds macOS only as x86_64 and ARM64EC only on Linux, so native arm64 macOS regressions are this project's to catch. |
+| FEX | Upstream `https://github.com/FEX-Emu/FEX.git`, main at or after `f18599d09` (e.g. `7d3090f78237`), or the first tag that contains it | FEX-2609.1 (`9fbdc00b`) is an off-main point release lacking the WoW64 CHPEv2 suspend/exception work. Build `arm64ecfex` and `wow64fex` as Windows PE with FEX's MinGW toolchain file. |
+| DXMT | Upstream `https://github.com/3Shain/dxmt.git`, main at or after `e94c312` | v0.80 lacks `-marm64x` (3b78076) and hybrid_patchable (20af9fc). |
+| LLVM/MinGW | A release newer than 20260421 (e.g. 20260908 or 20260922), verified as in P1.3 | Madeira's loader-ordering patches exist because ld.lld crashed on 20260421 when linking FEX without the MinGW CRT. |
 
-Inspect Madeira's source before writing replacement Wine/FEX glue. Reuse a compatible implementation or a small change extracted from it when possible. Do not run its full iOS build or replace SDK names mechanically.
+No public Wine version contains this plan's macOS host work (4 KiB spawning, layout emulation, custom-x18 boundaries, TSO, MAP_JIT). Upstream master still links every Darwin build with `-pagezero_size,0x1000`. The local patch series therefore stays, rebased on the selected tag.
+
+Rejected bases, with reasons: wine-11.0 stable (lacks the 11.x ARM64EC/WoW64 and macOS groundwork); Proton (Linux-only, 11.0 base); Hangover's Wine (Linux-only); Madeira's fork (11.4 plus iOS commits); CrossOver 26.x (x86_64/Rosetta; an arm64 build of its 26.3 tree reportedly fails to load kernel32 [unverified]); Wine MR11638 (reportedly unentitled, native-ARM64-only, relies on xnu's SDK&lt;13 x18 override, no 4 KiB pages or low 4 GiB, so no identity-mapped WoW64 [unverified: the MR was not reachable during review]).
+
+### 3.0.1 Comparison references
+
+Use these to diff design decisions, not as sources to copy wholesale. Their runtime results are self-reported and unverified here.
+
+| Project | Snapshot | What it is | Use |
+|---|---|---|---|
+| [MacNeutron](https://github.com/chadouming/MacNeutron) | `8813ac1f982f` | Wine 11.19 + 20 patches, FEX + 5 patches, ARM64X DXMT; entitled, 4 KiB, strict x18 toggling, exec via SETEXEC. Requires macOS 27 and an Apple-granted entitlement; no ad-hoc mode | Closest public design. Diff each local patch area against it: dual-view EC code memory (its Wine 0011 + FEX 0005), RW↔RX fault flip (0006), winemac shim (0013), msync |
+| [Highball arm64 line](https://github.com/himbeles/highball-engine-aoe4) | `f27fd69d2e45` | Wine 11.18 + 3 patches, Hangover FEX DLLs, a small Darwin FEX unixlib; reports i386 and x86-64 within ~20% of Rosetta on a compute loop on an M4, macOS 27. No renderer | Minimal-patch reference; Darwin FEX unixlib (`fex/fexunixlib_darwin.cpp`), fault flip (0019) |
+| CrossOver ARM64 preview | Blog post 2026-07-31 | Native arm64 Wine, custom macOS FEX, ARM64 DXMT, macOS 26.5+, no D3DMetal | Diff its LGPL Wine sources when published; its FEX changes need not be published |
+| [Hangover](https://github.com/AndreRH/hangover) | Wine 11.16 + 9 commits | Linux ARM64 Wine + FEX/Box64 | WoW64 patches as i386 references (d6a44ddebc, 6789030082, 594cf64e8b, 7b1ccaa862, 07defd3b97) |
+
+Upstream FEX has no macOS plans and does not accept AI-generated contributions. Expect the macOS FEX changes (Darwin unixlib, JIT memory) to remain a downstream patch series.
+
+### 3.1 Madeira assessment
+
+[Madeira](https://github.com/willfaust/Madeira) is an iOS single-process runtime: the wineserver is a thread, Windows processes are pseudo-processes, and JIT memory comes from an attached debugger. About 115k lines of iOS replacement C under `build/` work around iOS limits that macOS 26.5+ removes: a hard 4 GB `__PAGEZERO` (hence offset-window WoW64), x18 zeroed on context switch (hence TEB in a TSD slot), no executable memory outside one pool, and no hardware TSO. Its DLLs are ABI-incompatible with an x18-based macOS Wine. **Use it as a reference only, never as a base.**
+
+Harvest:
+- FEX's DualMap write path in the ios-port-2607 fork, as a checklist of every place FEX writes code (80+ sites: `DualMap.h`, `Buffer.h` WritePtr, JIT link/backpatch writes, `Dispatcher.cpp`, `ArchHelpers/Arm64.cpp`). Invalidate the instruction cache at the **RX** address after writing through the RW alias. Licence: changes published before 2026-08-28 are MIT, later ones GPL-3+ (`LICENSE-MADEIRA.md`); prefer MacNeutron's port or a clean implementation.
+- The sysctl-based CPU feature list and AFP/LRCPC2 tuning.
+- Bug reports to reproduce on this runtime: `free_async_queue` use-after-free (d0c56b04eb) and the RtlIsEcCode bounds check (ac650deca3).
+- The x64 instruction conformance tests (`asmconf-x64`, FEX golden tests re-hosted as a PE), rebuilt from source.
+- Steam notes: SteamSetup and the bootstrap `steam.exe` are 32-bit; CEF flags; the Windows 8 version-lie that selects the legacy channel.
+
+Avoid: the `build/*-unix` replacement runtime, pool execution and aliases, x18 avoidance, guest windows, software-only TSO, prebuilt `xtajit*.dll`, the ARM64EC loader-ordering patches (06143656ec, 948212bd97, f3339da9f6, a052a7f8e3), and the DXMT fork (defines `DXMT_IOS` for every Windows target, non-standard install directory, GPL-3 additions).
+
+The remainder of this section is the original P1 inspection record. It is kept for traceability; where it conflicts with 3.0 and 3.1, those govern.
 
 The inspected superproject snapshot is `bbbf8d0e20fd8b75f433f4a8d2a8eaf8d5571120`. Its gitlinks and `.gitmodules` identify these candidates:
 
@@ -80,6 +128,8 @@ Madeira's WoW64 design places 32-bit guest addresses in offset windows because o
 Madeira's DXMT iOS notes describe UIKit adaptations, static archive integration, and changed cross-process handling. Prefer upstream's macOS implementation for the native graphics side; retain fork changes only when their ARM64EC role is demonstrated. The iOS notes and newer build record describe different PE configurations, so inspect actual headers/build outputs. [DXMT iOS notes](https://github.com/willfaust/Madeira/blob/bbbf8d0e20fd8b75f433f4a8d2a8eaf8d5571120/build/dxmt-ios/README.md), [upstream DXMT](https://github.com/3Shain/dxmt).
 
 ### 3.3 Route selection gate
+
+**Status (R1):** decided as route 1 with the sources in 3.0. Routes 2 and 3 are closed. The original gate text follows.
 
 During P1, before its exit gate, write `docs/source-selection.md` with one selected Wine/FEX/DXMT combination and the following comparison:
 
@@ -175,7 +225,7 @@ Fetch the Madeira superproject snapshot without recursive submodules or prebuilt
 
 For each chosen SHA, prove the object is fetchable and that `git rev-parse HEAD` equals it. Record nested gitlinks too. Obtain the upstream base of each fork from actual history/remotes; do not diff unrelated tips and call all differences porting requirements.
 
-Inspect current upstream Wine ARM64 macOS support and MR11638 or its successor commits. Wine 11.18 remains a candidate, not a mandatory baseline. If GitLab access fails, preserve the error and compare available authoritative source; do not fabricate the inaccessible MR's contents. Inspect FEX backend source and upstream macOS DXMT as well.
+Inspect current upstream Wine ARM64 macOS support and MR11638 or its successor commits. (R1: the upstream audit selected wine-11.19; see 3.0. MR11638 and the wine-devel announcement still need to be read and archived from a host that can reach winehq.org.) If GitLab access fails, preserve the error and compare available authoritative source; do not fabricate the inaccessible MR's contents. Inspect FEX backend source and upstream macOS DXMT as well.
 
 **Output:** source evidence table: component, feature, source file/symbol, base/commit, existing behavior, host dependencies, action (`use`, `adapt`, `exclude`, or `unknown`). Unknown items remain unknown until inspected.
 
@@ -215,15 +265,106 @@ validate those drivers, device enumeration, drive-management services or the
 nsiproxy networking path. Do not run Steam on this profile or mistake their
 absence for a working general Wine port.
 
-Before expanding runtime coverage, add a separate executable-memory gate:
-create `HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, 0, 0)`, allocate/write/free a block,
-then add actual generated ARM64 execution with instruction-cache maintenance,
-write/execute transitions, concurrent threads and fault-state restoration.
-Record native protection and Windows-visible protection independently. Never
-return a read/write-only allocation as executable success. Restore each disabled
-driver and use fresh-prefix startup with no unhandled exceptions as its oracle.
-The FEX JIT allocator requires its own M1 write/execute contract; do not assume
-that solving one of these contracts automatically solves the other.
+The executable-memory contract is now specified in M0-EM. It replaces the
+earlier requirement that every positive RWX probe pass natively.
+
+### M0.0 Re-port onto wine-11.19 (R1, next task)
+
+Wine 11.4 is 15 development releases and about 3,900 commits behind wine-11.19,
+including about 100 ARM64/ARM64EC/WoW64 core commits that current FEX relies on
+(cooperative suspend b8d8f34ffd/211e7a3d3b; KiUserEmulationDispatcher rework
+f12bd89a4b, d3b41a854a, 3b6b0cedd9, 56ba8d233c; EcCodeBitMap bounds check
+2f69c014dc; dispatcher rework fc2ba3ffce, 6ddac4544f, 27da578141) and macOS
+groundwork (356547ea6e SIGBUS as SIGSEGV; 321d527d84/920240e73e CPU features and
+name; 8ad6011269 address-space limit; fd3fbe3ef3 macOS main-thread handling;
+1a63b0d7c4 cross-process Metal swapchain).
+
+11.4 also has a latent bug in this exact configuration: `server/mapping.c`
+rejects view addresses not aligned to the server's 16 KiB mask, which breaks
+4 KiB clients. ed091c479a (wine-11.9) fixes it. If the re-port is delayed,
+back-port that commit to the 11.4 profile first.
+
+Re-port procedure:
+
+1. Fetch wine-11.19 from upstream (not the willfaust URL) into a new checkout
+   `sources/wine-r1`; keep `sources/wine-m0` unchanged for comparison.
+2. Re-implement the M0 patch by hand. A dry run rejected 7 hunks in each of the M0
+   and EM patches: `configure`/`configure.ac` (preloader context changed by
+   dee9173b15, c2aaafcf10, f82008b27b), four places in `signal_arm64.c`
+   (`call_user_mode_callback`, `ill_handler`/`bus_handler`, `signal_init_process`,
+   `__wine_unix_call_dispatcher`) and `virtual.c`. Hunks that apply in the dispatcher
+   land in changed code (new `_kernel_stack`/`_user_stack` labels, a second
+   `syscall_dispatcher_return_slowpath`, `usr1_handler` PC rewrite); review them as
+   carefully as the rejects. Drop only the SIGBUS hunk, which upstream supersedes.
+   Re-check the low reservation against 60c5ce0263 and 4c18d96e9b.
+3. Fix these defects during the re-port (M0.0.1).
+4. Produce `patches/wine-r1/` as a reviewed series (one concern per patch: build
+   and layout, 4 KiB exec, x18 boundaries, signals, TSO, diagnostics, executable
+   memory), not one combined diff.
+5. Pass P0-BASE and all 32 M0 checks on the new base before any further EM work.
+   Keep the 11.4 profile buildable until then.
+
+#### M0.0.1 Defects to fix in the re-port
+
+| ID | Defect | Required change and test |
+|---|---|---|
+| R1-X18-RACE | A signal arriving after `MACOS_ENTER_GUEST` but before the switch to the user stack is classed as inside a syscall, so custom mode is not restored. The x18 setters are strict and trap when called with the current state; with custom mode off the kernel zeroes x18 on exception return, so the next leave-guest call traps or the guest TEB is lost. Found by code reading; upstream fc2ba3ffce changes the same window. | Define the boundary state from one authoritative per-thread flag that the signal path reads, not from the stack position. Add a stress test that delivers timer signals (SIGALRM/SIGUSR1) at high frequency while guest threads make syscalls and Unix calls in a tight loop, for 60 s, checking guest TEB and exit status. |
+| R1-HOTPATH | `getenv` runs on every transition when `AOE2_M0_DIAGNOSTICS` is unset, `sysconf` runs on every transition, and `getenv` runs in `system_time_precise`. `test-m0.py` always sets the variable, so the release path is untested. | Read configuration once at process start. Run the M0 suite with diagnostics both on and off. |
+| R1-SPAWN | The 4 KiB re-spawn leaves a waiting 16 KiB parent per Windows process, forwards no signals and reports `128+N` exit codes. | Use `posix_spawn(POSIX_SPAWN_SETEXEC)` with `posix_spawnattr_set_4k_page_size_np` in the loader and in ntdll's exec path (Wine already uses SETEXEC in `dlls/ntdll/unix/loader.c`). Check for the entitlement first: an unentitled 4 KiB exec is a silent SIGKILL. Test that a signal sent to the Windows process's host PID reaches it and that exit codes are exact. |
+| R1-TSO | `thread_set_x86_64_compat(1)` is called on every thread, including pure ARM64 processes, and FEX is never told hardware TSO is on, so it still emits software barriers. | Enable TSO only in processes that load an x86 emulator, and only on threads that execute translated code. Report it to FEX through the Darwin unixlib (M1.1). |
+| R1-CPUID | `get_core_id_regs_arm64` is a stub outside Linux (`dlls/ntdll/unix/system.c`). FEX reads zero ID registers and assumes ARMv8.0 without LSE. | Synthesize ID register values from `hw.optional.arm.FEAT_*` sysctls. Test: an ARM64 probe reads the registry/`IsProcessorFeaturePresent` values and they match the sysctls. |
+
+### M0-EM Executable memory contract (replaces EM-3/EM-4 exit criteria)
+
+Facts this design rests on (see `docs/route-review.md` section 4 for sources):
+
+- xnu refuses any simultaneously writable and executable mapping that was not
+  created with `MAP_JIT` (`VM_MAP_POLICY_WX_FAIL`). No entitlement changes this.
+  EM-1's EACCES is permanent; "native RWX at the same address via mprotect" is
+  not a goal.
+- `MAP_JIT|MAP_FIXED` is allowed for arm64 4 KiB non-"exotic" maps since
+  xnu-12377.101.15 (macOS 26.4), and the cross-architecture entitlements grant
+  MAP_JIT. Whether layout emulation counts as "exotic" is closed source and must
+  be tested. `docs/executable-memory.md` cited the frozen xnu `main` branch
+  (26.0); cite release tags instead.
+- MAP_JIT write permission is per thread; a toggle made inside a signal handler is
+  reportedly lost on return; mprotect on a MAP_JIT range reportedly fails once it
+  is RWX; hardened runtime may limit a process to one MAP_JIT region [all unverified].
+- FEX itself allocates its code buffers, dispatcher and trampolines with
+  `PAGE_EXECUTE_READWRITE` (`AllocatorHooks.h`, `SharedCodeBufferManager.cpp`,
+  `ARM64EC/Module.cpp`, `WOW64/Module.cpp`) and toggles
+  PAGE_EXECUTE_READ/READWRITE in its invalidation tracker. Failing these requests
+  (EM-2's policy) breaks FEX initialization.
+
+Design, by consumer:
+
+| Consumer | Host mapping | Windows-visible result |
+|---|---|---|
+| x86 guest memory in emulated processes (non-EC_CODE memory in ARM64EC processes; all guest memory under WoW64) | Exact read/write permissions, never PROT_EXEC. FEX's self-modifying-code write traps rely on the write permission being exact. | Requested PAGE_EXECUTE_* protection, recorded in Wine's metadata; never fails |
+| FEX code cache, ARM64EC | One section mapped twice at a constant offset: RW view and RX view (MacNeutron Wine 0011 + FEX 0005 as references); or one large MAP_JIT region toggled per thread via the Darwin unixlib | PAGE_EXECUTE_READWRITE succeeds |
+| FEX code cache, WoW64 | Same mechanism; FEX must request the pool explicitly (small FEX patch) or Wine uses an address rule (FEX allocates top-down; guest memory stays below 4 GiB; Hangover d6a44ddebc keeps WoW64 host allocations above 4 GiB) | As above |
+| Native ARM64 code requesting RWX (ARM64 PE programs, ntoskrnl heap) | RW↔RX flip on fault (references: Highball 0019, MacNeutron 0006). Known risk: livelock when code stores into the page it is executing; detect and fail loudly | PAGE_EXECUTE_READWRITE succeeds |
+| ntoskrnl driver heap | Make `ntoskrnl_heap` non-executable on aarch64 macOS (as in 458eb1a481 and dappermint 88ca5b254b) | Restores the six drivers without RWX |
+
+Bring-up order:
+
+1. EM-R1: non-executable ntoskrnl heap; restore NDIS, winebus, winebth, wineusb,
+   mountmgr and nsiproxy; fresh-prefix startup with no unhandled exceptions.
+2. EM-3 host experiments in an entitled, layout-emulated 4 KiB child, on 26.6.2
+   and later on 27, under the target signing profile (S1): `MAP_FIXED|MAP_JIT` at
+   Wine-chosen low addresses; a dual-view section; RW↔RX flip throughput;
+   cross-core instruction-cache publication (writer thread on one core, executor
+   on another, 10^6 iterations, no stale execution).
+3. EM-4a: the fault flip for native RWX and the guest-memory policy. This is the
+   cheapest way to unblock M1 (it reportedly let unmodified Hangover FEX run).
+4. EM-4b: the dual-view or MAP_JIT code cache, as the performance and robustness
+   target, before M1.6 and before performance work.
+
+EM exit (replaces "all existing positive executable probes"): A64-EXEC-HEAP passes;
+A64-EXEC-RWX passes through the flip; the six drivers start cleanly; host
+mappings never have W and X together; Windows-visible protections match requests;
+no reservation leaks. EM-2's ACCESS_DENIED behaviour remains only as the
+fallback when a mechanism is unavailable, and must be logged.
 
 ### M0.1 Build the native host and minimum Windows modules
 
@@ -283,6 +424,16 @@ Inspect Madeira's backend recipe and the corresponding pinned FEX implementation
 
 Build a native/PE backend combination compatible with M0. Identify actual imports and resolve them through the selected Wine runtime. Handle Darwin VM/protection, instruction-cache invalidation, signal handling, and thread contexts with focused reproductions. Hardware capabilities must be queried accurately for this Mac; do not hardcode a CPU feature mask copied from an iPhone.
 
+R1 requirements, established by source review:
+
+- **Backend selection.** Upstream Wine loads the x86-64 emulator named by `HKLM\Software\Microsoft\Wow64\amd64` (`dlls/ntdll/loader.c:load_arm64ec_module`) and the i386 emulator named by `Wow64\x86` (`dlls/wow64/syscall.c:get_cpu_dll_name`). The value must be a short bare DLL name resolved from system32. Install `libarm64ecfex.dll` and `libwow64fex.dll` under their own names and select them through these values; do not rename them to `xtajit64.dll`/`xtajit.dll` or patch the loader. FEX's `libarm64ecfex.def` matches the 20 exports in Wine's `xtajit64.spec`.
+- **FEX build.** Rewrite `scripts/build-fex.sh` for upstream FEX: use FEX's MinGW toolchain file with `MINGW_TRIPLE=arm64ec-w64-mingw32` (ARM64EC backend) and `aarch64-w64-mingw32` (WoW64 backend). The current script configures for the macOS host, targets Madeira's fork and does not build `wow64fex`.
+- **Darwin FEX unixlib.** Upstream FEX's PE backends call an optional unixlib (`Source/Windows/Common/FEXUnixLib.cpp`, gated on `Available()`); its Linux implementation does not apply to macOS. Highball reports SIGKILLs from raw Linux syscalls without a Darwin helper [unverified]. Treat a Darwin unixlib as required from day one: hardware TSO state, JIT write toggling if MAP_JIT is chosen, and any host queries FEX needs. Reference: Highball `fex/fexunixlib_darwin.cpp`.
+- **TSO.** Tell FEX that hardware TSO is active on the threads where it is enabled, so it stops emitting software barriers; verify with a FEX log or a store-buffering litmus throughput comparison.
+- **CPU features.** Depends on R1-CPUID (M0.0.1).
+- **JIT memory.** Depends on EM-4a at minimum (M0-EM). Do not enable FEX with EM-2's fail-on-RWX policy.
+- **Floating point.** Run FEX with `X87ReducedPrecision=0` for any test that compares results with Windows, and for M5 multiplayer.
+
 ### M1.2 Prove mixed execution and backend selection
 
 Create a Windows ARM64EC DLL exporting a simple integer operation and an x86-64 caller. Have each print/check its expected architecture-specific behavior and a known result. This verifies call/return dispatch rather than just loading a DLL.
@@ -303,8 +454,10 @@ Collect Wine module-loading evidence and at least one backend-specific initializ
 | X64-PROTECT | Change protection on one guest 4 KiB page and query it; fault fixture exercises forbidden access | Windows-visible protection and exception addresses correct |
 | X64-STRESS | 20 consecutive launches plus four concurrent isolated probes | All statuses/results correct, no translation deadlock or monotonically leaked runtime process count |
 | X64-BACKEND | Backend present/absent/restored experiment | Success/failure/success, with expected backend diagnostic |
+| X64-ASMCONF | FEX's golden x86-64 instruction tests re-hosted as a Windows PE (Madeira's `asmconf-x64` approach), built from source | All cases match expected results; listed exceptions documented individually |
+| WINETEST-X64 | Selected Wine conformance test modules (at least ntdll, kernel32, kernelbase) built as x86-64 and run under FEX | No regressions against the same modules in the ARM64 lane; failures triaged individually |
 
-Reuse Madeira's `tests/x64/asmconf-x64.c`, `fpconf-x64.c`, `setjmp-x64.c`, `heap-x64.c`, and `fileio-x64.c` selectively after inspecting their expected behavior and dependencies. The existence of those tests or text-based host checks is not evidence they pass here. [Reference test directory](https://github.com/willfaust/Madeira/tree/bbbf8d0e20fd8b75f433f4a8d2a8eaf8d5571120/tests/x64).
+Reuse Madeira's `tests/x64/asmconf-x64.c`, `fpconf-x64.c`, `setjmp-x64.c`, `heap-x64.c`, and `fileio-x64.c` selectively after inspecting their expected behavior and dependencies (GPL-3 where marked; preserve licences). The existence of those tests or text-based host checks is not evidence they pass here. [Reference test directory](https://github.com/willfaust/Madeira/tree/bbbf8d0e20fd8b75f433f4a8d2a8eaf8d5571120/tests/x64).
 
 **M1 exit:** ARM64EC mixed calls and required x64 tests pass; FEX selection and no-Rosetta execution demonstrated. Keep graphics and Steam out of failure reproduction.
 
@@ -327,17 +480,44 @@ This gate is deliberately stricter than a single translated executable. Steam re
 
 Do not treat a host PID printed by a pseudo-process runtime as sufficient proof of Windows process isolation. The isolation and IPC tests must demonstrate the selected architecture's semantics.
 
-**Exit:** required process/synchronization/network tests pass. PROC-MIXED waits for M2's x86 probe. Any session cleanup must preserve unrelated Wine processes and user data.
+**Exit:** required process/synchronization/network tests pass. PROC-MIXED waits for M1.6's x86 probe. Any session cleanup must preserve unrelated Wine processes and user data.
 
-## 11. M2 — i386/WoW64 and the real Windows Steam client
+**Synchronization performance (R1).** Upstream Wine's in-process synchronization (ntsync) is Linux-only, so on macOS every wait is a wineserver round trip. Measure it with a SYNC-PERF fixture (uncontended event set/wait and mutex acquire/release, 10^6 iterations, single and 8 threads) and record the numbers. If it dominates later profiles, evaluate CrossOver's msync (carried by MacNeutron) as a separate patch with its own tests.
+
+## 10.1 M1.6 — i386 guests through WoW64 (R1)
+
+32-bit x86 support is part of the end goal, not only a Steam prerequisite, so it gets its own milestone before M2.
+
+Build and configuration:
+
+- Configure Wine with `--enable-archs=arm64ec,aarch64,i386` and build upstream FEX's `wow64fex` (aarch64 PE). Select it via `Wow64\x86`.
+- WoW64 FEX code cache uses the M0-EM mechanism (EM-4b), with an explicit pool request or the top-down address rule; guest memory stays identity-mapped below 4 GiB.
+- Test that [64 KiB, 4 GiB) is reservable for large-address-aware i386 programs. Highball reports that a `0x170000000` layout works [unverified], whereas this host recorded a failure with that value; retest with the re-ported loader before choosing.
+- Use Hangover's WoW64 commits (3.0.1) as references; take only changes with a reproducer here.
+
+Required tests:
+
+| ID | Action | Exact oracle |
+|---|---|---|
+| TC-X86 | Build the simple Windows API probe as i386 | PE I386 |
+| X86-HELLO | Run the hello probe as i386 | Exact text, exit 23, `wow64fex` loaded |
+| X86-MEM / X86-THREAD / X86-SEH / X86-IO | i386 versions of the A64 memory, TLS/atomic, exception and file probes | Same oracles as the A64 tests |
+| X86-LAA | Large-address-aware probe reserves and touches memory above 2 GiB and up to the 4 GiB limit | Expected addresses succeed; no collision with host allocations |
+| X86-SUSPEND | Suspend/resume and GetThreadContext on a thread running translated i386 code, 1,000 times | Contexts are valid i386 contexts; thread completes correctly |
+| X86-UNIX | x86 code calls into native Unix code with pointer-bearing structures (e.g. a file or socket API path) | Null pointers, handles, lengths and padding keep their meaning |
+| X86-CONCURRENT | Two concurrent i386 processes use the same low address with different data | Each keeps its own data |
+| PROC-MIXED | x64 parent → x86 child and x86 parent → x64 child | Correct child architectures and statuses |
+| WINETEST-X86 | Same Wine test modules as WINETEST-X64, built as i386 | No regressions against the ARM64 lane |
+
+**M1.6 exit:** all of the above pass. The only public i386-under-FEX-on-macOS data point is a compute loop, so expect real work here.
+
+## 11. M2 — the real Windows Steam client
 
 ### M2.1 Establish required architecture support
 
 Inspect PE headers of the actual Steam installer/client/helper files acquired for this test. Record client build and architecture per executable; do not assume Steam is all x64 or assume Madeira's client pins match the current download.
 
-Build the required Wine WoW64 modules and FEX 32-bit backend. Madeira stages its WoW64 backend separately from `xtajit64.dll`; derive actual names, machine types, and registry/loader behavior from the selected source. Test identity low-address mappings first. If a guest-offset window is necessary, write a separate pointer/handle/ownership design and test it before integrating any Madeira window code.
-
-Required tests: TC-X86; X86-HELLO with exit 23; x86 versions of memory, TLS/atomic, exception, and file probes; PROC-MIXED; two concurrent i386 processes with the same low address and independent data; x86-to-native Unix calls with pointer-bearing structures. Null pointers, scalar handles, buffer lengths, and struct padding must retain their intended semantics.
+M1.6 must pass first; it covers the WoW64 build, backend selection and i386 tests. Identity low-address mapping is the design; an offset window like Madeira's is not needed on macOS 26.5+ and would require a separate pointer/handle/ownership design. Madeira reports that SteamSetup and the bootstrap `steam.exe` are 32-bit; confirm from the actual files.
 
 ### M2.2 Steam smoke sequence
 
@@ -373,6 +553,16 @@ The inspected upstream build instructions require LLVM 15 libraries and Xcode/Me
 
 Use explicit DLL overrides only for this test prefix. Record loaded module paths/hashes. Confirm DXMT actually supplies the device and Metal is used, rather than a different Wine renderer or software fallback.
 
+R1 graphics requirements:
+
+- **Source and build.** Upstream DXMT main at or after `e94c312`, built as ARM64X PE plus i386 PE, with an aarch64 `winemetal.so` linked against an arm64 build of the LLVM version DXMT requires (15.0.7 at review time). Rewrite `scripts/build-dxmt.sh`, which targets Madeira's fork.
+- **winemac shim.** DXMT needs winemac.drv's `macdrv_functions` export (or the hidden symbols) and the Wine 8 `macdrv_win_data` layout; without them it aborts at `d3d11_swapchain.cpp:138`. Add a small winemac patch exposing them. References: CrossOver's `d3dmetal.c` (x86_64-guarded there), MacNeutron 0013, dappermint 713015f/13e6a88/565f638. Track DXMT PR #166 and Wine MR 11058 (ExtEscape) as the long-term replacement [unverified].
+- **G0 Metal probe**, before D11-DEVICE: a native Metal device, command queue, buffer and compute dispatch created from a Unix call inside the 4 KiB, custom-x18, layout-emulated Wine process, with a readback oracle. This separates Metal-in-this-process problems from DXMT problems.
+- **i386.** Test `newBufferWithBytesNoCopy` on 4096-aligned memory below 4 GiB before relying on DXMT for i386 games.
+- **Per-application use.** Steam's CEF/ANGLE has open DXMT bugs (#141, #183); apply DXMT per application, not prefix-wide, until those are tested. Cover cross-process CEF swapchains and D2D/IDXGISurface interop (DXMT PR #222 open at review time) before M2's UI tests rely on them.
+- **Other APIs.** D3D9 order to evaluate: wined3d, then mtld3d (zlib licence), then DXVK on KosmicKrisp. DXVK on MoltenVK is ruled out (MoltenVK lacks geometry shaders, nullDescriptor and robustBufferAccess2, which DXVK 2.x requires). D3DMetal is ruled out (x86_64-only, evaluation licence).
+- AoE2DE has no public DXMT reports; check D2D text rendering early.
+
 ### M3.2 Required standalone rendering tests
 
 | ID | Action | Exact oracle |
@@ -389,6 +579,8 @@ Use explicit DLL overrides only for this test prefix. Record loaded module paths
 Use source-generated shaders or checked-in small test DXBC with reproducible generation instructions. Avoid depending on game shaders to debug the first triangle. A screenshot is supporting evidence; readback gives the numerical oracle.
 
 ### M3.3 AoE2DE menu
+
+A native macOS AoE2DE build without Windows crossplay reportedly exists since 2026-05-28 [unverified]. Confirm that Windows Steam in this prefix downloads the Windows depot, and that the Windows build is the one matchmaking with Windows players.
 
 Install the owned game through the validated Steam path. Record its actual app ID from Steam metadata, build/depot version, executable architecture/hash, imports, launch arguments, and runtime prerequisites. Install only dependencies identified by game manifests/import failures; do not apply a broad untracked winetricks recipe.
 
@@ -432,6 +624,27 @@ Use the M1 floating-point/atomic tests and a trusted Windows result to investiga
 
 **M5 exit:** three completed Windows-peer sessions with no observed desync, normal lifecycle, and no Rosetta processes. This establishes the tested scenario/build only; avoid claiming universal compatibility.
 
+## 14.1 Cross-cutting gates (R1)
+
+### S1 — signing profile and enforcement
+
+Everything so far runs with SIP disabled, `amfi_get_out_of_my_way=0x1` and an ad-hoc signature carrying `com.apple.developer.cross-architecture-support-unmanaged`. Release xnu kills 4 KiB spawns that fail its private policy (`fourk_fatal_mode`, `LOAD_BADMACHO`). MacNeutron reports running with an Apple-granted `com.apple.developer.cross-architecture-support` capability, a Developer ID, hardened runtime and notarization, with no ad-hoc mode [unverified]. A "robust" result needs a defined signing profile.
+
+1. Record which entitlement names exist, what "unmanaged" means, and whether an individual developer can obtain them (`docs/entitlement-audit.md`).
+2. Define the target profile: entitlements, hardened runtime on/off, Developer ID or ad-hoc, which executables are signed.
+3. Re-run P0, M0 and the EM-3 experiments under that profile with SIP and AMFI enabled, as soon as an entitlement is available. MAP_JIT region limits under hardened runtime are part of this.
+4. Until then, every milestone result is labelled "SIP/AMFI disabled".
+
+This gate does not block local milestones, but no result is called robust without it.
+
+### T1 — regression lanes
+
+- Build Wine with tests enabled. Run selected winetest modules in three lanes: ARM64 native, x86-64 under FEX (WINETEST-X64) and i386 under WoW64 (WINETEST-X86). Record per-module pass/fail and compare lanes.
+- Replace count-based pass rules ("32/32", "39/41") in `scripts/test-m0.py` with a registry of required test IDs, so adding a test cannot change what "pass" means silently.
+- Add signal, suspend and unwind stress tests to the M0 suite (R1-X18-RACE).
+- Re-run all lanes after every Wine/FEX/DXMT rebase. Upstream CI does not build native arm64 macOS.
+- Add macOS 27 to the host matrix when available.
+
 ## 15. Failure classification and stopping rules
 
 | Symptom | First evidence to inspect | Next experiment |
@@ -450,23 +663,30 @@ An unresolved upstream API or architectural gap can genuinely block a milestone.
 
 ## 16. Immediate next work package and completion definition
 
-P1's M0 toolchain/source work and native ARM64 console acceptance are implemented.
-The next work package is **executable memory**, before restoring the excluded drivers:
+P1's M0 toolchain/source work and native ARM64 console acceptance are implemented
+on Wine 11.4. EM-1 (host refuses RWX with EACCES; Wine reported false success,
+inconsistent metadata and a leaked reservation) and EM-2 (clean failure, 39/41
+extended checks in the `em` profile) are recorded in `docs/executable-memory.md`.
 
-1. Preserve P0-BASE and the 32 passing M0 console checks.
-2. Run `scripts/test-host-vm.sh` and `scripts/test-m0.py --exec-memory`
-   (41 checks; currently 34 pass). EM-1 is recorded in `docs/executable-memory.md`:
-   the host refuses RWX with EACCES, and Wine reports false success, keeps
-   inconsistent protection metadata and leaks a reservation per failed
-   executable heap.
-3. EM-2 is implemented in the separate `em` profile
-   (`patches/wine-em/`, `AOE2_WINE_PROFILE=em`): failed executable requests now
-   fail cleanly with consistent state and no leak; 39/41 pass, leaving only the
-   positive RWX and executable-heap requirements. The `m0` baseline is unchanged.
-4. Next: use EM-3's standalone host experiments to select the mapping mechanism, then
-   implement EM-4's real protection contract and require all extended probes to pass.
-5. Restore and test the six excluded drivers with fresh-prefix startup free of
-   unhandled faults. Then continue M1's ARM64EC/FEX ABI map and backend selection.
+Next work, in order (R1):
+
+1. **Re-port to wine-11.19** (M0.0), fixing R1-X18-RACE, R1-HOTPATH, R1-SPAWN,
+   R1-TSO and R1-CPUID on the way. Exit: P0-BASE and all 32 M0 checks pass on the
+   new base, with diagnostics on and off, plus the x18 signal stress test.
+   If this slips, back-port ed091c479a to the 11.4 profile first.
+2. **EM-R1:** non-executable ntoskrnl heap; restore the six drivers.
+3. **EM-3 host experiments** (M0-EM), then **EM-4a** (guest-memory policy and
+   RW↔RX flip).
+4. **Script and source cleanup:** switch `fetch-sources.sh` and `sources.lock.json`
+   to upstream Wine/FEX/DXMT pins (3.0); stop `fetch-sources.sh` from deleting
+   directories without `.git`; use one work-root default (`$AOE2_WORK_ROOT`, not a
+   hard-coded `/Users/...` path); rewrite `build-fex.sh` and `build-dxmt.sh`.
+5. **M1:** runtime ABI map (`docs/runtime-abi.md`), Darwin FEX unixlib, registry
+   backend selection, M1 tests; then EM-4b (dual-view or MAP_JIT code cache).
+6. **M1.5**, then **M1.6** (i386), then M2 onward. G0 and the winemac shim may be
+   developed in parallel with M1.
+7. Throughout: T1 regression lanes; S1 as soon as an entitlement is available;
+   diff each local patch area against MacNeutron and Highball before finalizing it.
 
 The native console checkpoint is achieved; executable heaps, FEX and graphics
 remain pending. The whole POC is complete only after M5's Windows-peer sessions,
@@ -481,4 +701,8 @@ next unresolved task.
 - [Madeira snapshot](https://github.com/willfaust/Madeira/tree/bbbf8d0e20fd8b75f433f4a8d2a8eaf8d5571120) — superproject cloned and selected documentation/build sources inspected during planning; submodule runtime builds not performed.
 - [Wine MR11638](https://gitlab.winehq.org/wine/wine/-/merge_requests/11638) — historical source-audit target; contents/current integration must be verified.
 - [DXMT upstream](https://github.com/3Shain/dxmt), [LLVM/MinGW](https://github.com/mstorsjo/llvm-mingw) — primary source candidates; choose exact commits/releases during P1.
+- [Route review, 2026-10-06](docs/route-review.md) — sources and confidence levels for every R1 change in this plan.
+- [Wine mirror](https://github.com/wine-mirror/wine), tag `wine-11.19`; [FEX](https://github.com/FEX-Emu/FEX); [Hangover](https://github.com/AndreRH/hangover).
+- [MacNeutron](https://github.com/chadouming/MacNeutron) at `8813ac1f982f`, [Highball](https://github.com/himbeles/highball-engine-aoe4) at `f27fd69d2e45` — comparison references; their runtime claims are self-reported.
+- Apple macOS 27 release notes (developer.apple.com/documentation/macos-release-notes/macos-27-release-notes) — Rosetta timeline.
 - [Existing platform test coverage](tests/platform/README.md), [entitlement observations](docs/entitlement-audit.md) — local evidence, including failed alternative layouts and limits of the smoke tests.
