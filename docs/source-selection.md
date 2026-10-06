@@ -2,7 +2,7 @@
 
 Updated: 2026-10-06. The lock file records exact sources and toolchain inputs. A configure pass alone does not prove a working Darwin runtime.
 
-**Route revision R1 (2026-10-06):** the selected sources from M0.0 onward are upstream Wine `wine-11.19` (`455e3509b98a`), upstream FEX main at or after `f18599d09`, and upstream DXMT main at or after `e94c312`. Madeira and its forks are references only. See plan section 3.0 and `docs/route-review.md`. The text below records the M0 decision on Wine 11.4 and remains accurate for that profile.
+**Superseded by plan R2 (MacNeutron base). Route revision R1 (2026-10-06):** the selected sources from M0.0 onward are upstream Wine `wine-11.19` (`455e3509b98a`), upstream FEX main at or after `f18599d09`, and upstream DXMT main at or after `e94c312`. Madeira and its forks are references only. See plan section 3.0 and `docs/route-review.md`. The text below records the M0 decision on Wine 11.4 and remains accurate for that profile.
 
 ## Reference sources
 

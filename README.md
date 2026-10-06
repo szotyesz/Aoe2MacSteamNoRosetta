@@ -53,16 +53,13 @@ this host and their unchecked heap use crashes startup. Device support, those
 network/drive-management services, FEX, DXMT, Steam and AoE2DE are not validated.
 Apple entitlement access remains a parallel inquiry, not a local POC blocker.
 
-Next (route revision R1, see [route review](docs/route-review.md)): re-port the
-M0 and EM patches from Wine 11.4 to the upstream wine-11.19 tag, fixing an x18
-signal race and other defects found in review; then make the ntoskrnl heap
-non-executable to restore the six drivers, and run the EM-3 host experiments.
-Native simultaneous writable+executable memory is no longer a goal: macOS
-refuses it for non-JIT memory, so executable memory is split by consumer (plan
-section M0-EM). FEX and DXMT move to upstream pins; Madeira is a reference only.
-The [executable-memory probes](docs/executable-memory.md) record EM-1 (host RWX
-refused with EACCES) and EM-2 (`AOE2_WINE_PROFILE=em`, 39/41 checks).
+**Plan R2 (2026-10-06):** development of this project's own Wine 11.4 runtime has
+stopped. The project now builds on [MacNeutron](https://github.com/chadouming/MacNeutron)
+(native arm64 Wine 11.19 + FEX + DXMT, with native Mac Steam through an arm64
+Steam bridge) and tunes it for AoE2DE. The tests above become an audit suite for
+it. Next: install macOS 27 and try a released MacNeutron with AoE2DE (stage N0),
+then build a fork here (N1). See [the plan](aoe2de-no-rosetta-plan.md).
 See [M0 results and preserved evidence](docs/m0-results.md),
-[the detailed plan](aoe2de-no-rosetta-plan.md),
+[the plan](aoe2de-no-rosetta-plan.md),
 [milestone status](docs/milestones.md), and
 [entitlement observations](docs/entitlement-audit.md).

@@ -5,7 +5,7 @@
   "work_root": "/Users/szotyesz/aoe2-poc-work",
   "verification": {
     "method": "Each component was blobless-cloned (--filter=blob:none, no submodule init) and its `git rev-parse HEAD` matched the plan \u00a716 snapshot pins AND the Madeira superproject `.gitmodules` gitlinks. Tarball SHA-256 recomputed locally.",
-    "note": "The on-disk SHAs agree with the authoritative pins in aoe2de-no-rosetta-plan.md \u00a716 (lines 55-58). Submodule working trees are NOT populated (P1.2 scope); gitlink SHAs below are the recorded/expected values needed to initialize them later.",
+    "note": "The on-disk SHAs agree with the authoritative pins in docs/archive/plan-r1-own-wine.md \u00a716 (lines 55-58). Submodule working trees are NOT populated (P1.2 scope); gitlink SHAs below are the recorded/expected values needed to initialize them later.",
     "download_verification": "LLVM/MinGW tarball downloaded and SHA-256 verified locally. Git provenance of the git-based components is by SHA match, not by content hash."
   },
   "superproject": {

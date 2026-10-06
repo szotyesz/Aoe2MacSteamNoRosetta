@@ -19,13 +19,15 @@ M0 proves native ARM64 Windows console execution through Wine. It does not prove
 x64 translation, executable heaps, the excluded device/network services, graphics,
 Steam or AoE2DE. The original platform probe remains unchanged and passes.
 
-Next (route revision R1): re-port M0/EM from Wine 11.4 to upstream wine-11.19
-(plan M0.0), fixing the x18 signal race, hot-path diagnostics, 4 KiB re-spawn,
-TSO scope and CPU feature reporting. Then restore NDIS, winebus, winebth, wineusb,
-mountmgr and nsiproxy with a non-executable ntoskrnl heap, and run the EM-3 host
-experiments under the executable-memory design in plan section M0-EM. The
-[executable-memory probes](executable-memory.md) record EM-1 (host refuses RWX
-with EACCES) and EM-2 (39/41 extended checks). New gates: M1.6 (i386/WoW64),
-S1 (signing profile with SIP/AMFI enabled) and T1 (winetest lanes). See
-[the detailed plan](../aoe2de-no-rosetta-plan.md) and the
-[route review](route-review.md).
+**Plan R2 (2026-10-06):** the stages above (P0–M5) describe the archived R1 plan
+(`docs/archive/plan-r1-own-wine.md`). P0 and M0 results remain valid evidence for
+macOS 26.6.2. Work now follows the R2 stages in [the plan](../aoe2de-no-rosetta-plan.md):
+
+| Stage | Status |
+|---|---|
+| N0: released MacNeutron + AoE2DE on macOS 27 | Pending (needs macOS 27) |
+| N1: fork builds here, non-Rosetta gates pass | Pending |
+| N2: audit with this project's tests | Pending |
+| N3: AoE2DE single-player | Pending |
+| N4: Windows-peer multiplayer | Pending |
+| N5: 32-bit, D3D9, media, regression lanes, optional Windows Steam | Pending |
